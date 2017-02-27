@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+
+<overlay id='mexint-amOverlay'
+         xmlns='http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul'>
+
+  <script type='application/javascript' src='chrome://mexint/content/AccountManagerOverlay.js'/>
+
+  <dialog id="accountManager">
+  </dialog>
+  <menupopup id="accountActionsDropdown">
+    <menuitem id="am-create-account"
+    	        label="Add Microsoft Exchange Account"
+    	        insertbefore="accountActionsDropdownSep1"
+    	        oncommand='window.open("chrome://mexint/content/AddAccountWindow.xul", "AccountWizard", "chrome,dialog,modal,titlebar,centerscreen", {});'/>
+  </menupopup>
+</overlay>

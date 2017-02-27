@@ -1,0 +1,22 @@
+"use strict";
+(function (FileAsMapping) {
+    FileAsMapping[FileAsMapping["None"] = 0] = "None";
+    FileAsMapping[FileAsMapping["SurnameCommaGivenName"] = 1] = "SurnameCommaGivenName";
+    FileAsMapping[FileAsMapping["GivenNameSpaceSurname"] = 2] = "GivenNameSpaceSurname";
+    FileAsMapping[FileAsMapping["Company"] = 3] = "Company";
+    FileAsMapping[FileAsMapping["SurnameCommaGivenNameCompany"] = 4] = "SurnameCommaGivenNameCompany";
+    FileAsMapping[FileAsMapping["CompanySurnameGivenName"] = 5] = "CompanySurnameGivenName";
+    FileAsMapping[FileAsMapping["SurnameGivenName"] = 6] = "SurnameGivenName";
+    FileAsMapping[FileAsMapping["SurnameGivenNameCompany"] = 7] = "SurnameGivenNameCompany";
+    FileAsMapping[FileAsMapping["CompanySurnameCommaGivenName"] = 8] = "CompanySurnameCommaGivenName";
+    FileAsMapping[FileAsMapping["SurnameGivenNameSuffix"] = 9] = "SurnameGivenNameSuffix";
+    FileAsMapping[FileAsMapping["SurnameSpaceGivenNameCompany"] = 10] = "SurnameSpaceGivenNameCompany";
+    FileAsMapping[FileAsMapping["CompanySurnameSpaceGivenName"] = 11] = "CompanySurnameSpaceGivenName";
+    FileAsMapping[FileAsMapping["SurnameSpaceGivenName"] = 12] = "SurnameSpaceGivenName";
+    FileAsMapping[FileAsMapping["DisplayName"] = 13] = "DisplayName";
+    FileAsMapping[FileAsMapping["GivenName"] = 14] = "GivenName";
+    FileAsMapping[FileAsMapping["SurnameGivenNameMiddleSuffix"] = 15] = "SurnameGivenNameMiddleSuffix";
+    FileAsMapping[FileAsMapping["Surname"] = 16] = "Surname";
+    FileAsMapping[FileAsMapping["Empty"] = 17] = "Empty";
+})(exports.FileAsMapping || (exports.FileAsMapping = {}));
+var FileAsMapping = exports.FileAsMapping;

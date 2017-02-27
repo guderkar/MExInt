@@ -1,0 +1,23 @@
+"use strict";
+(function (ElcFolderType) {
+    ElcFolderType[ElcFolderType["Calendar"] = 1] = "Calendar";
+    ElcFolderType[ElcFolderType["Contacts"] = 2] = "Contacts";
+    ElcFolderType[ElcFolderType["DeletedItems"] = 3] = "DeletedItems";
+    ElcFolderType[ElcFolderType["Drafts"] = 4] = "Drafts";
+    ElcFolderType[ElcFolderType["Inbox"] = 5] = "Inbox";
+    ElcFolderType[ElcFolderType["JunkEmail"] = 6] = "JunkEmail";
+    ElcFolderType[ElcFolderType["Journal"] = 7] = "Journal";
+    ElcFolderType[ElcFolderType["Notes"] = 8] = "Notes";
+    ElcFolderType[ElcFolderType["Outbox"] = 9] = "Outbox";
+    ElcFolderType[ElcFolderType["SentItems"] = 10] = "SentItems";
+    ElcFolderType[ElcFolderType["Tasks"] = 11] = "Tasks";
+    ElcFolderType[ElcFolderType["All"] = 12] = "All";
+    ElcFolderType[ElcFolderType["ManagedCustomFolder"] = 13] = "ManagedCustomFolder";
+    ElcFolderType[ElcFolderType["RssSubscriptions"] = 14] = "RssSubscriptions";
+    ElcFolderType[ElcFolderType["SyncIssues"] = 15] = "SyncIssues";
+    ElcFolderType[ElcFolderType["ConversationHistory"] = 16] = "ConversationHistory";
+    ElcFolderType[ElcFolderType["Personal"] = 17] = "Personal";
+    ElcFolderType[ElcFolderType["RecoverableItems"] = 18] = "RecoverableItems";
+    ElcFolderType[ElcFolderType["NonIpmRoot"] = 19] = "NonIpmRoot";
+})(exports.ElcFolderType || (exports.ElcFolderType = {}));
+var ElcFolderType = exports.ElcFolderType;

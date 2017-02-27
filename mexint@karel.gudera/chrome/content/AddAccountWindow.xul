@@ -1,0 +1,93 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+
+<window id="AddAccountWindow"
+        title="Add Microsoft Exchange Account"
+        width="540"
+        height="300"
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+  <script type="application/javascript" src="AddAccountWindow.js"/>
+
+  <vbox flex="1">
+    <grid>
+      <columns>
+        <column />
+        <column flex="1"/>
+      </columns>
+      <rows>
+        <row>
+          <caption label="Account Information"/>
+        </row>
+        <separator class="groove"/>
+        <row>
+          <label id="nameLabel"
+                 value="Your name:"
+                 control="name"/>
+          <textbox id="name"
+                   placeholder="First Last"
+                   flex="6"/>
+        </row>
+        <row>
+          <label id="usernameLabel"
+                 value="Username / E-mail:"
+                 control="username"/>
+          <textbox id="username"
+                   placeholder="Username / email@domain.com"
+                   flex="6"/>
+        </row>
+        <row>
+          <label id="passwordLabel"
+                 value="Password:"
+                 control="password"/>
+          <textbox id="password" 
+                   placeholder="Password"
+                   type="password"
+                   flex="6"/>
+        </row>
+        <row>
+          <label id="URLLabel"
+                 value="EWS URL:"
+                 control="URL"/>
+          <textbox id="URL"
+                   placeholder="https://domain.com/EWS/Exchange.asmx"
+                   flex="6"/>
+        </row>
+        <row>
+          <label id="authenticationLabel"
+                 value="Authentication:"/>
+          <menulist id="authType"
+                    flex="6">
+            <menupopup>
+              <menuitem label="Basic"
+                        value="Basic"/>
+              <menuitem label="NTLM"
+                        value="NTLM"/>
+            </menupopup>
+          </menulist>
+        </row>
+        <row>
+          <label id="TLSLabel"
+                 value="Enable CERT check:"/>
+          <checkbox id="TLS"
+                    label="WARNING: Disabling will skip server's certificate validation"
+                    checked="true"
+                    flex="6"/>
+        </row>
+        <separator class="groove-thin"/>
+        <separator class="groove-thin"/>
+        <vbox align="center">
+          <button id="addAccountButton"
+                  oncommand="addAccount();">
+            <description>Add Account</description>
+          </button>
+          <button id="cancelButton"
+                  oncommand="window.close();">
+            <description>Cancel</description>
+          </button>
+        </vbox>
+      </rows>
+    </grid>
+  </vbox>
+
+</window>
