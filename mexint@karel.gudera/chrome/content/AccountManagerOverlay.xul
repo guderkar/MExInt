@@ -12,6 +12,6 @@
     <menuitem id="am-create-account"
     	        label="Add Microsoft Exchange Account"
     	        insertbefore="accountActionsDropdownSep1"
-    	        oncommand='window.open("chrome://mexint/content/AddAccountWindow.xul", "AccountWizard", "chrome,dialog,modal,titlebar,centerscreen", {});'/>
+    	        oncommand='window.open("chrome://mexint/content/AddAccountWindow.xul", "AddAccountWindow", "chrome,dialog,modal,titlebar,centerscreen", {});'/>
   </menupopup>
 </overlay>
