@@ -14,12 +14,12 @@ process.stdin.on('readable', () => {
 });
 
 process.stdin.on('end', () => {
-    var authData = data;
+    var authData_base64 = data;
     var [ URL,
           username,
           password,
           authType,
-          TLS ] = Buffer.from(authData, "base64").toString("utf-8").split('\n');
+          TLS ] = Buffer.from(authData_base64, "base64").toString("utf-8").split('\n');
 
     if ( TLS == "false" )
         process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';

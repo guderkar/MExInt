@@ -11,9 +11,6 @@ var args = process.argv.slice(2);
 var IDs = [];
 var data = "";
 
-for ( var i = 0; i < args.length; i++ )
-    IDs.push(new ews.ItemId(args[i]));
-
 process.stdin.setEncoding('utf8');
 
 process.stdin.on('readable', () => {
@@ -24,15 +21,19 @@ process.stdin.on('readable', () => {
 });
 
 process.stdin.on('end', () => {
-    var authData = data;
+    var [authData_base64, IDs_base64] = data.split('\n');
     var [ URL,
           username,
           password,
           authType,
-          TLS ] = Buffer.from(authData, "base64").toString("utf-8").split('\n');
+          TLS ] = Buffer.from(authData_base64, "base64").toString("utf-8").split('\n');
+    var IDsArray = Buffer.from(IDs_base64, "base64").toString("utf-8").split('\n');
 
     if ( TLS == "false" )
         process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
+    for ( var i = 0; i < IDsArray.length; i++ )
+        IDs.push(new ews.ItemId(IDsArray[i]));
 
     try
     {
@@ -56,9 +57,6 @@ process.stdin.on('end', () => {
         process.stdout.write("ERROR");
         process.exit(1);
     }
-
-    if ( IDs.length == 0 )
-        process.exit(0);
 
     var d = require('domain').create()
     d.on('error', function (error) {

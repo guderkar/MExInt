@@ -41,6 +41,10 @@ function fetchMessages (IDs, server, URL, username, password, authType, TLS)
 	var stdout = "";
 	var stderr;
 	var msgCnt = 0;
+	var IDsStr = "";
+
+	for ( var i = 0; i < IDs.length; i++ )
+		(i == IDs.length - 1) ? IDsStr += IDs[i] : IDsStr += IDs[i] + '\n';
 
 	let authData_base64 = base64.encode(URL      + '\n' +
 		                                username + '\n' + 
@@ -49,15 +53,17 @@ function fetchMessages (IDs, server, URL, username, password, authType, TLS)
 		                                TLS,
 		                                "utf-8");
 
+	let IDs_base64 = base64.encode(IDsStr, "utf-8");
+
 	var p = subprocess.call({
 		command: nodePath.path,
-		arguments: [getMsgPath.path].concat(IDs),
+		arguments: [getMsgPath.path],
 		//environment: [],
 		charset: "UTF-8",
 		//workdir: "",
 
 		stdin: function (stdin) {
-			stdin.write(authData_base64);
+			stdin.write(authData_base64 + '\n' + IDs_base64);
 			stdin.close();
 		},
 

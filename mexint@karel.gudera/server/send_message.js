@@ -15,12 +15,12 @@ process.stdin.on('readable', () => {
 });
 
 process.stdin.on('end', () => {
-	var [authData, msgBody, mime] = data.split('\n');
+	var [authData_base64, msgBody_base64, mime_base64] = data.split('\n');
 	var [ URL,
 		  username,
 		  password,
 		  authType,
-		  TLS ] = Buffer.from(authData, "base64").toString("utf-8").split('\n');
+		  TLS ] = Buffer.from(authData_base64, "base64").toString("utf-8").split('\n');
 
 	if ( TLS == "false" )
 		process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
@@ -50,9 +50,9 @@ process.stdin.on('end', () => {
 		var escapeHTML = require('escape-html');
 		var message = new ews.EmailMessage(exch);
 		var mimeContent = new ews.MimeContent();
-		mimeContent.Content = mime;
+		mimeContent.Content = mime_base64;
 		message.MimeContent = mimeContent;
-		message.Body = new ews.MessageBody(ews.BodyType.HTML, escapeHTML(Buffer.from(msgBody, "base64").toString("utf-8")));
+		message.Body = new ews.MessageBody(ews.BodyType.HTML, escapeHTML(Buffer.from(msgBody_base64, "base64").toString("utf-8")));
 
 		for ( var i = 0; i < bccRecipients.length; i++ )
 			message.BccRecipients.Add(bccRecipients[i]);
