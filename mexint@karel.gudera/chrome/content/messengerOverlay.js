@@ -232,38 +232,93 @@ function getMessages (server)
 
 function mexint_onLoad (event)
 {
-	var folderPaneContextElement = document.getElementById("folderPaneContext");
-	var getMessagesElement = document.getElementById("folderPaneContext-getMessages");
-	var getMessagesOCAttr = getMessagesElement.getAttribute("oncommand");
 	window.running = false;
 
-	folderPaneContextElement.addEventListener("popupshown", function (event) {
-		if ( gFolderTreeView.getSelectedFolders().length == 1 &&
-		     gFolderTreeView.getSelectedFolders()[0].isServer &&
-		     gFolderTreeView.getSelectedFolders()[0].server.getBoolValue("mexint") == true )
-		{
-			getMessagesElement.setAttribute("oncommand", null);
-		}
-		else
-		{
-			getMessagesElement.setAttribute("oncommand", getMessagesOCAttr);
-		}
-
-	}, false);
-	
-	getMessagesElement.addEventListener("command", function (event) {
-		if ( gFolderTreeView.getSelectedFolders().length == 1 &&
-		     gFolderTreeView.getSelectedFolders()[0].isServer &&
-		     gFolderTreeView.getSelectedFolders()[0].server.getBoolValue("mexint") == true )
+	// override original function
+	GetNewMsgs = function (server, folder)
+	{
+		// START MY CODE
+		if ( server.getBoolValue("mexint") )
 		{
 			if ( running )
 				return;
 
 			running = true;
-			getMessages(gFolderTreeView.getSelectedFolders()[0].server);
-		}
+			getMessages(server);
 
-	}, false);
+			return;
+		}
+		// END MY CODE
+
+		// Note that for Global Inbox folder.server != server when we want to get
+		// messages for a specific account.
+
+		const nsIMsgFolder = Components.interfaces.nsIMsgFolder;
+		// Whenever we do get new messages, clear the old new messages.
+		folder.biffState = nsIMsgFolder.nsMsgBiffState_NoMail;
+		folder.clearNewMessages();
+		server.getNewMessages(folder, msgWindow, null);
+	}
+
+	// override original function
+	GetMessagesForAllAuthenticatedAccounts = function ()
+	{
+	  // now log into any server
+	  try
+	  {
+	    var allServers = accountManager.allServers;
+	    // array of isupportsarrays of servers for a particular folder
+	    var pop3DownloadServersArray = [];
+	    // parallel array of folders to download to...
+	    var localFoldersToDownloadTo = [];
+	    var pop3Server;
+
+	    for (var i = 0; i < allServers.length; ++i)
+	    {
+	      var currentServer = allServers.queryElementAt(i, Components.interfaces.nsIMsgIncomingServer);
+
+	      // START MY CODE
+	      if ( currentServer.getBoolValue("mexint") )
+	      {
+	        if ( running )
+	          continue;
+
+	        running = true;
+	        getMessages(currentServer);
+
+	        continue;
+	      }
+	      // END MY CODE
+
+	      if (currentServer.protocolInfo.canGetMessages &&
+	          !currentServer.passwordPromptRequired)
+	      {
+	        if (currentServer.type == "pop3")
+	        {
+	          CoalesceGetMsgsForPop3ServersByDestFolder(currentServer,
+	            pop3DownloadServersArray, localFoldersToDownloadTo);
+	          pop3Server = currentServer.QueryInterface(Components.interfaces.nsIPop3IncomingServer);
+	        }
+	        else
+	        // get new messages on the server for imap or rss
+	          GetMessagesForInboxOnServer(currentServer);
+	      }
+	    }
+	    for (var i = 0; i < pop3DownloadServersArray.length; ++i)
+	    {
+	      // any ol' pop3Server will do - the serversArray specifies which servers to download from
+	      pop3Server.downloadMailFromServers(pop3DownloadServersArray[i],
+	                                         pop3DownloadServersArray[i].length,
+	                                         msgWindow,
+	                                         localFoldersToDownloadTo[i],
+	                                         null);
+	    }
+	  }
+	  catch(ex)
+	  {
+	      dump(ex + "\n");
+	  }
+	}
 }
 
 window.addEventListener("load", function (event) { mexint_onLoad(event); }, false);

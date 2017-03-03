@@ -38,44 +38,20 @@ function accountStillExists (account)
 
 function mexint_onLoad (event)
 {
-	var accountActionsDropdownElement = document.getElementById("accountActionsDropdown");
-	var removeAccountElement = document.getElementById("accountActionsDropdownRemove");
-	var removeAccountOCAttr = removeAccountElement.getAttribute("oncommand");
+	onRemoveAccountOrig = onRemoveAccount;
 
-	accountActionsDropdownElement.addEventListener("popupshown", function (event) { 
-		var accountTree = document.getElementById("accounttree");
-		var selection = accountTree.view.selection;
-		var xulTreeObject = accountTree.contentView.getItemAtIndex(selection.currentIndex);
-		var server = xulTreeObject._account.incomingServer;
-
-		if ( server.getBoolValue("mexint") == true )
-		{
-			removeAccountElement.setAttribute("oncommand", null);
-		}
-		else
-		{
-			removeAccountElement.setAttribute("oncommand", removeAccountOCAttr);
-		}
-		
-	}, false);
-
-	removeAccountElement.addEventListener("command", function (event) { 
-		var accountTree = document.getElementById("accounttree");
-		var selection = accountTree.view.selection;
-		var xulTreeObject = accountTree.contentView.getItemAtIndex(selection.currentIndex);
-		var account = xulTreeObject._account;
+	// override original function
+	onRemoveAccount = function (event) 
+	{
+		var account = currentAccount;
 		var server = account.incomingServer;
 		var username = server.realUsername;
 
-		if ( server.getBoolValue("mexint") == true )
-		{
-			eval(removeAccountOCAttr);
-
-			if ( ! accountStillExists(account) )
-				removeLoginManagerInfo(username);
-		}
-
-	}, false);
+		onRemoveAccountOrig(event);
+		
+		if ( ! accountStillExists(account) )
+			removeLoginManagerInfo(username);
+	}
 }
 
 window.addEventListener("load", function (event) { mexint_onLoad(event); }, false);
