@@ -46,10 +46,11 @@ function mexint_onLoad (event)
 		var account = currentAccount;
 		var server = account.incomingServer;
 		var username = server.realUsername;
+		var isMexint = server.getBoolValue("mexint");
 
 		onRemoveAccountOrig(event);
 		
-		if ( ! accountStillExists(account) )
+		if ( isMexint && ! accountStillExists(account) )
 			removeLoginManagerInfo(username);
 	}
 }
