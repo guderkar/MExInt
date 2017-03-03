@@ -9,6 +9,7 @@ var node = (OS == "WINNT") ? "node.exe" : "node";
 var nodePath = FileUtils.getFile("ProfD", ["extensions", "mexint@karel.gudera", "components", node]);
 var getMsgPath = FileUtils.getFile("ProfD", ["extensions", "mexint@karel.gudera", "server", "get_messages.js"]);
 var getHdrPath = FileUtils.getFile("ProfD", ["extensions", "mexint@karel.gudera", "server", "get_headers.js"]);
+var delMsgPath = FileUtils.getFile("ProfD", ["extensions", "mexint@karel.gudera", "server", "delete_messages.js"]);
 
 function showNotification (notificationMessage)
 {
@@ -91,7 +92,7 @@ function fetchMessages (IDs, server, URL, username, password, authType, TLS)
 	});
 }
 
-function deleteMessages (msgDBHdrs, folder)
+function deleteMsgDBHdrs (msgDBHdrs, folder)
 {
 	Components.utils.import("resource:///modules/iteratorUtils.jsm");
 	let xpcomHdrArray = toXPCOMArray(msgDBHdrs, Components.interfaces.nsIMutableArray);
@@ -141,7 +142,7 @@ function parseHeaders (headers, server, URL, username, password, authType, TLS)
 
 	if ( toDelete.length > 0 )
 	{
-		deleteMessages(toDelete, inbox);
+		deleteMsgDBHdrs(toDelete, inbox);
 	}
 
 	if ( toFetch.length > 0 )
@@ -228,6 +229,88 @@ function getMessages (server)
 
 	showNotification(server.prettyName + ": Checking for new messages...");
 	getHeaders(server, URL, username, password, authType, TLS);
+}
+
+function deleteMessages (server)
+{
+	var msgDBHdrs = gFolderDisplay.selectedMessages;
+	var folder = gFolderDisplay.displayedFolder;
+
+	var URL = server.getCharValue("ewsURL");
+	var username = server.username;
+	var password;
+	var authType = server.getCharValue("authType");
+	var TLS = server.getCharValue("TLS");
+
+	var passwordManager = Components.classes["@mozilla.org/login-manager;1"]
+                          .getService(Components.interfaces.nsILoginManager);
+
+    var nsLoginInfo = new Components.Constructor("@mozilla.org/login-manager/loginInfo;1",
+    	                                         Components.interfaces.nsILoginInfo,
+    	                                         "init");
+
+    var logins = passwordManager.findLogins({}, 'chrome://mexint', null, 'User Registration');
+      
+	for ( var i = 0; i < logins.length; i++ )
+	{
+		if ( logins[i].username == username )
+		{
+			password = logins[i].password;
+			break;
+		}
+	}
+
+	var exitCode;
+	var stdout;
+	var stderr;
+	var IDsStr = "";
+
+	for ( var i = 0; i < msgDBHdrs.length; i++ )
+		(i == msgDBHdrs.length - 1) ? IDsStr += msgDBHdrs[i].messageId : IDsStr += msgDBHdrs[i].messageId + '\n';
+
+	let authData_base64 = base64.encode(URL      + '\n' +
+		                                username + '\n' + 
+		                                password + '\n' +
+		                                authType + '\n' +
+		                                TLS,
+		                                "utf-8");
+
+	let IDs_base64 = base64.encode(IDsStr, "utf-8");
+
+	var p = subprocess.call({
+		command: nodePath.path,
+		arguments: [delMsgPath.path],
+		//environment: [],
+		charset: "UTF-8",
+		//workdir: "",
+
+		stdin: function (stdin) {
+			stdin.write(authData_base64 + '\n' + IDs_base64);
+			stdin.close();
+		},
+
+		done: function (result) {
+			exitCode = result.exitCode;
+			stdout = result.stdout;
+			stderr = result.stderr;
+
+			if ( stdout == "ERROR" )
+			{
+				running = false;
+				showNotification(server.prettyName + ": Error connecting to Exchange server");
+				return;
+			}
+
+			deleteMsgDBHdrs(msgDBHdrs, folder);
+			running = false;
+
+			setTimeout(function () {
+				showNotification(server.prettyName + ": Deleted " + msgDBHdrs.length + " message(s)");
+			}, 500);
+		},
+
+		mergeStderr: false
+	});
 }
 
 function mexint_onLoad (event)
@@ -319,6 +402,22 @@ function mexint_onLoad (event)
 	      dump(ex + "\n");
 	  }
 	}
+
+	// override original command
+	document.getElementById("cmd_delete").setAttribute("oncommand", 
+		'var server = GetFirstSelectedMsgFolder().server;' +
+		'if ( server.getBoolValue("mexint") )'             +
+		'{'                                                +
+		'	if ( running )'                                +
+		'		return;'                                   +
+
+		'	running = true;'                               +
+		'	deleteMessages(server);'                       +
+
+		'	return;'                                       +
+		'}'                                                +
+
+		'goDoCommand("cmd_delete");');
 }
 
 window.addEventListener("load", function (event) { mexint_onLoad(event); }, false);
