@@ -95,8 +95,8 @@ process.stdin.on('end', () => {
                                         "X-Mozilla-Status2: 00000000\r\n" +
                                         Buffer.from(resp.Item.MimeContent.Content, "base64")
                                         .toString("binary")
-                                        .replace(/^Message-ID:.*(\r\n|\r|\n)/m, "Message-ID: " + resp.Item.Id.UniqueId + "\r\n")
-                                        .replace(/^Date:.*(\r\n|\r|\n)/m, "Date: " + date2 + "\r\n");
+                                        .replace(/^Message-ID:.*(\r\n|\r|\n)/mi, "Message-ID: " + resp.Item.Id.UniqueId + "\r\n")
+                                        .replace(/^Date:.*(\r\n|\r|\n)/mi, "Date: " + date2 + "\r\n");
 
                     process.stdout.write(Buffer.from(messageSource, "binary").toString("base64") + '\n');
                     
