@@ -73,15 +73,18 @@ function fetchMessages (IDs, server, folder, URL, username, password, authType, 
 		},
 
 		stdout: function (data) {
-			stdout += data;
-			var lfIndex = stdout.indexOf('\n');
+			var lfIndex = data.indexOf('\n');
 
 			if ( lfIndex > -1 )
 			{
 				showNotification(folder.prettiestName + " - " + server.prettyName + ": Downloading message " + (++msgCnt) + " of " + IDs.length + "...");
-				var message = stdout.slice(0, lfIndex);
-				stdout = stdout.slice(lfIndex + 1);
+				var message = stdout + data.slice(0, lfIndex);
+				stdout = data.slice(lfIndex + 1);
 				saveMessage(message, server, folder);
+			}
+			else
+			{
+				stdout += data;
 			}
 		},
 
