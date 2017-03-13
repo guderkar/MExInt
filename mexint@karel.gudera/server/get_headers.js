@@ -2,7 +2,22 @@ var ews = require('ews-javascript-api');
 ews.EwsLogging.DebugLogEnabled = false;
 
 var args = process.argv.slice(2);
+var flag = args[0];
+var folder;
 var data = "";
+
+if ( flag == "inbox" )
+	folder = ews.WellKnownFolderName.Inbox;
+else if ( flag == "drafts" )
+	folder = ews.WellKnownFolderName.Drafts;
+else if ( flag == "sent" )
+	folder = ews.WellKnownFolderName.SentItems;
+else if ( flag == "junk" )
+	folder = ews.WellKnownFolderName.JunkEmail;
+else if ( flag == "trash" )
+	folder = ews.WellKnownFolderName.DeletedItems;
+else if ( flag == "outbox" )
+	folder = ews.WellKnownFolderName.Outbox;
 
 process.stdin.setEncoding('utf8');
 
@@ -56,7 +71,7 @@ process.stdin.on('end', () => {
 	d.run(function () {
 		var view = new ews.ItemView();
 		view.PropertySet = new ews.PropertySet(ews.BasePropertySet.IdOnly)
-		var items = exch.FindItems(ews.WellKnownFolderName.Inbox, view);
+		var items = exch.FindItems(folder, view);
 		items.then(function (response) {
 		    for (var item of response.Items)
 		        process.stdout.write(item.Id.UniqueId + '\n');

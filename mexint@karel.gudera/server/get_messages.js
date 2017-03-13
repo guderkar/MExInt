@@ -90,12 +90,12 @@ process.stdin.on('end', () => {
                         resp.Item.Update(ews.ConflictResolutionMode.AlwaysOverwrite);
                     }
 
-                    var messageSource = "From - " + date1 + "\r\n" +
+                    var messageSource = resp.Item.Id.UniqueId + '\n' +
+                                        "From - " + date1 + "\r\n" +
                                         "X-Mozilla-Status: " + XMozillaStatus + "\r\n" +
                                         "X-Mozilla-Status2: 00000000\r\n" +
                                         Buffer.from(resp.Item.MimeContent.Content, "base64")
                                         .toString("binary")
-                                        .replace(/^Message-ID:.*(\r\n|\r|\n)/mi, "Message-ID: " + resp.Item.Id.UniqueId + "\r\n")
                                         .replace(/^Date:.*(\r\n|\r|\n)/mi, "Date: " + date2 + "\r\n");
 
                     process.stdout.write(Buffer.from(messageSource, "binary").toString("base64") + '\n');

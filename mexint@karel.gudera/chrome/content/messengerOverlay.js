@@ -28,21 +28,25 @@ function showNotification (notificationMessage)
 	gActivityManager.removeActivity(event.id);
 }
 
-function saveMessage (message_base64, server)
+function saveMessage (message_base64, server, folder)
 {
-	var inbox = server.rootFolder.getFolderWithFlags(Components.interfaces.nsMsgFolderFlags.Inbox);
-	var messageSource = atob(message_base64);
-	inbox.QueryInterface(Components.interfaces.nsIMsgLocalMailFolder);
-	inbox.addMessage(messageSource);
+	var tmp = atob(message_base64);
+	var lfIndex = tmp.indexOf('\n');
+	var UniqueId = tmp.slice(0, lfIndex);
+	var messageSource = tmp.slice(lfIndex + 1);
+	folder.QueryInterface(Components.interfaces.nsIMsgLocalMailFolder);
+	var message = folder.addMessage(messageSource);
+	message.messageId = UniqueId;
 }
 
-function fetchMessages (IDs, server, URL, username, password, authType, TLS)
+function fetchMessages (IDs, server, folder, URL, username, password, authType, TLS)
 {
 	var exitCode;
 	var stdout = "";
 	var stderr;
 	var msgCnt = 0;
 	var IDsStr = "";
+	var flag;
 
 	for ( var i = 0; i < IDs.length; i++ )
 		(i == IDs.length - 1) ? IDsStr += IDs[i] : IDsStr += IDs[i] + '\n';
@@ -74,18 +78,18 @@ function fetchMessages (IDs, server, URL, username, password, authType, TLS)
 
 			if ( lfIndex > -1 )
 			{
-				showNotification(server.prettyName + ": Downloading message " + (++msgCnt) + " of " + IDs.length + "...");
+				showNotification(folder.prettiestName + " - " + server.prettyName + ": Downloading message " + (++msgCnt) + " of " + IDs.length + "...");
 				var message = stdout.slice(0, lfIndex);
 				stdout = stdout.slice(lfIndex + 1);
-				saveMessage(message, server);
+				saveMessage(message, server, folder);
 			}
 		},
 
 		done: function (result) {
 			exitCode = result.exitCode;
 			stderr = result.stderr;
-			running = false;
-			showNotification(server.prettyName + ": Received " + IDs.length + " of " + IDs.length + " message(s)");
+			folder.setStringProperty("lock", "false");
+			showNotification(folder.prettiestName + " - " + server.prettyName + ": Received " + IDs.length + " of " + IDs.length + " message(s)");
 		},
 
 		mergeStderr: false
@@ -99,14 +103,13 @@ function deleteMsgDBHdrs (msgDBHdrs, folder)
 	folder.deleteMessages(xpcomHdrArray, null, true, false, null, false);
 }
 
-function parseHeaders (headers, server, URL, username, password, authType, TLS)
+function parseHeaders (headers, server, folder, URL, username, password, authType, TLS)
 {
 	var headers = headers.split('\n');
 	headers.pop(); // last '\n' causes extra empty string
 	var serverHeaders = [];
 	var localHeaders = [];
 	var localMsgDBHdrs = [];
-	var inbox = server.rootFolder.getFolderWithFlags(Components.interfaces.nsMsgFolderFlags.Inbox);
 
 	Components.utils.import("resource:///modules/iteratorUtils.jsm");
 
@@ -117,7 +120,7 @@ function parseHeaders (headers, server, URL, username, password, authType, TLS)
 	}
 
 	// local headers
-	for (let msgHdr in fixIterator(inbox.messages, Components.interfaces.nsIMsgDBHdr)) 
+	for (let msgHdr in fixIterator(folder.messages, Components.interfaces.nsIMsgDBHdr)) 
 	{
 		localHeaders.push(msgHdr.messageId);
 		localMsgDBHdrs.push(msgHdr);
@@ -142,26 +145,42 @@ function parseHeaders (headers, server, URL, username, password, authType, TLS)
 
 	if ( toDelete.length > 0 )
 	{
-		deleteMsgDBHdrs(toDelete, inbox);
+		deleteMsgDBHdrs(toDelete, folder);
 	}
 
 	if ( toFetch.length > 0 )
 	{
-		showNotification(server.prettyName + ": Found " + toFetch.length + " message(s) to download");
-		fetchMessages(toFetch, server, URL, username, password, authType, TLS);
+		showNotification(folder.prettiestName + " - " + server.prettyName + ": Found " + toFetch.length + " message(s) to download");
+		fetchMessages(toFetch, server, folder, URL, username, password, authType, TLS);
 	}
 	else
 	{
-		running = false;
-		showNotification(server.prettyName + ": No messages to download");
+		folder.setStringProperty("lock", "false");
+		showNotification(folder.prettiestName + " - " + server.prettyName + ": No messages to download");
 	}
 }
 
-function getHeaders (server, URL, username, password, authType, TLS)
+function getHeaders (server, folder, URL, username, password, authType, TLS)
 {
 	var exitCode;
 	var stdout;
 	var stderr;
+	var flag;
+
+	if ( folder.getFlag(Components.interfaces.nsMsgFolderFlags.Inbox) )
+		flag = "inbox";
+	else if ( folder.getFlag(Components.interfaces.nsMsgFolderFlags.Drafts) )
+		flag = "drafts";
+	else if ( folder.getFlag(Components.interfaces.nsMsgFolderFlags.SentMail) )
+		flag = "sent";
+	else if ( folder.getFlag(Components.interfaces.nsMsgFolderFlags.Junk) )
+		flag = "junk";
+	else if ( folder.getFlag(Components.interfaces.nsMsgFolderFlags.Trash) )
+		flag = "trash";
+	else if ( folder.getFlag(Components.interfaces.nsMsgFolderFlags.Queue) )
+		flag = "outbox";
+	else
+		flag = "xxx" // TODO: folder UniqueId in the future
 
 	let authData_base64 = base64.encode(URL      + '\n' +
 		                                username + '\n' + 
@@ -172,7 +191,7 @@ function getHeaders (server, URL, username, password, authType, TLS)
 
 	var p = subprocess.call({
 		command: nodePath.path,
-		arguments: [getHdrPath.path],
+		arguments: [getHdrPath.path, flag],
 		//environment: [],
 		charset: "UTF-8",
 		//workdir: "",
@@ -189,20 +208,26 @@ function getHeaders (server, URL, username, password, authType, TLS)
 
 			if ( stdout == "ERROR" )
 			{
-				running = false;
+				folder.setStringProperty("lock", "false");
 				showNotification(server.prettyName + ": Error connecting to Exchange server");
 				return;
 			}
 
-			parseHeaders(stdout, server, URL, username, password, authType, TLS);
+			parseHeaders(stdout, server, folder, URL, username, password, authType, TLS);
 		},
 
 		mergeStderr: false
 	});
 }
 
-function getMessages (server)
+function getMessages (server, folder)
 {
+	if ( folder.getStringProperty("lock") == "true" )
+		return;
+
+	folder.setStringProperty("lock", "true");
+	showNotification(folder.prettiestName + " - " + server.prettyName + ": Checking for new messages...");
+
 	var URL = server.getCharValue("ewsURL");
 	var username = server.username;
 	var password;
@@ -227,14 +252,18 @@ function getMessages (server)
 		}
 	}
 
-	showNotification(server.prettyName + ": Checking for new messages...");
-	getHeaders(server, URL, username, password, authType, TLS);
+	getHeaders(server, folder, URL, username, password, authType, TLS);
 }
 
-function deleteMessages (server)
+function deleteMessages (server, folder)
 {
 	var msgDBHdrs = gFolderDisplay.selectedMessages;
-	var folder = gFolderDisplay.displayedFolder;
+
+	if ( folder.getStringProperty("lock") == "true" )
+		return;
+
+	folder.setStringProperty("lock", "true");
+	showNotification(folder.prettiestName + " - " + server.prettyName + ": Deleting " + msgDBHdrs.length + " message(s)...");
 
 	var URL = server.getCharValue("ewsURL");
 	var username = server.username;
@@ -264,6 +293,7 @@ function deleteMessages (server)
 	var stdout;
 	var stderr;
 	var IDsStr = "";
+	var hardDelete = (folder.getFlag(Components.interfaces.nsMsgFolderFlags.Trash)) ? "true" : "false";
 
 	for ( var i = 0; i < msgDBHdrs.length; i++ )
 		(i == msgDBHdrs.length - 1) ? IDsStr += msgDBHdrs[i].messageId : IDsStr += msgDBHdrs[i].messageId + '\n';
@@ -279,7 +309,7 @@ function deleteMessages (server)
 
 	var p = subprocess.call({
 		command: nodePath.path,
-		arguments: [delMsgPath.path],
+		arguments: [delMsgPath.path, hardDelete],
 		//environment: [],
 		charset: "UTF-8",
 		//workdir: "",
@@ -296,17 +326,14 @@ function deleteMessages (server)
 
 			if ( stdout == "ERROR" )
 			{
-				running = false;
+				folder.setStringProperty("lock", "false");
 				showNotification(server.prettyName + ": Error connecting to Exchange server");
 				return;
 			}
 
 			deleteMsgDBHdrs(msgDBHdrs, folder);
-			running = false;
-
-			setTimeout(function () {
-				showNotification(server.prettyName + ": Deleted " + msgDBHdrs.length + " message(s)");
-			}, 500);
+			folder.setStringProperty("lock", "false");
+			showNotification(folder.prettiestName + " - " + server.prettyName + ": Deleted " + msgDBHdrs.length + " message(s)");
 		},
 
 		mergeStderr: false
@@ -315,7 +342,37 @@ function deleteMessages (server)
 
 function mexint_onLoad (event)
 {
-	window.running = false;
+	// unlock all exchange folders
+	var accountManager = Components.classes["@mozilla.org/messenger/account-manager;1"]
+                         .getService(Components.interfaces.nsIMsgAccountManager);
+
+	var accounts = accountManager.accounts;
+	var exchangeServers = [];
+
+	for ( var i = 0; i < accounts.length; i++ )
+	{
+		var account = accounts.queryElementAt(i, Components.interfaces.nsIMsgAccount);
+		var server = account.incomingServer;
+		var rootFolder = account.incomingServer.rootFolder;
+
+		if ( server.getBoolValue("mexint") )
+			exchangeServers.push(server);
+
+		if ( server.getBoolValue("mexint") && rootFolder.hasSubFolders )
+		{
+			var subFolders = rootFolder.subFolders;
+
+			while ( subFolders.hasMoreElements() )
+			{
+				var folder = subFolders.getNext().QueryInterface(Components.interfaces.nsIMsgFolder);
+				folder.setStringProperty("lock", "false");
+			}
+		}
+	}
+
+	// check for new messages in inbox at startup
+	for ( var i = 0; i < exchangeServers.length; i++ )
+		getMessages(server, server.rootFolder.getFolderWithFlags(Components.interfaces.nsMsgFolderFlags.Inbox));
 
 	// override original function
 	GetNewMsgs = function (server, folder)
@@ -323,12 +380,8 @@ function mexint_onLoad (event)
 		// START MY CODE
 		if ( server.getBoolValue("mexint") )
 		{
-			if ( running )
-				return;
-
-			running = true;
-			getMessages(server);
-
+			var auxFolder = folder.isServer ? server.rootFolder.getFolderWithFlags(Components.interfaces.nsMsgFolderFlags.Inbox) : folder;
+			getMessages(server, auxFolder);
 			return;
 		}
 		// END MY CODE
@@ -363,12 +416,8 @@ function mexint_onLoad (event)
 	      // START MY CODE
 	      if ( currentServer.getBoolValue("mexint") )
 	      {
-	        if ( running )
-	          continue;
-
-	        running = true;
-	        getMessages(currentServer);
-
+	      	var folder = currentServer.getFolderWithFlags(Components.interfaces.nsMsgFolderFlags.Inbox);
+	        getMessages(currentServer, folder);
 	        continue;
 	      }
 	      // END MY CODE
@@ -405,19 +454,27 @@ function mexint_onLoad (event)
 
 	// override original command
 	document.getElementById("cmd_delete").setAttribute("oncommand", 
-		'var server = GetFirstSelectedMsgFolder().server;' +
+		'var folder = GetFirstSelectedMsgFolder();'        +
+		'var server = folder.server;'                      +
 		'if ( server.getBoolValue("mexint") )'             +
 		'{'                                                +
-		'	if ( running )'                                +
-		'		return;'                                   +
-
-		'	running = true;'                               +
-		'	deleteMessages(server);'                       +
-
+		'	deleteMessages(server, folder);'               +
 		'	return;'                                       +
 		'}'                                                +
 
 		'goDoCommand("cmd_delete");');
+
+	// override original function
+	// SendUnsentMessages = function ()
+	// {
+	// 	TODO
+	// }
+
+	// handle opening folder event
+	window.document.getElementById('folderTree').addEventListener("select", function () {
+		if ( ! gFolderDisplay.displayedFolder.isServer && gFolderDisplay.displayedFolder.server.getBoolValue("mexint") )
+			getMessages(gFolderDisplay.displayedFolder.server, gFolderDisplay.displayedFolder);
+	}, false);
 }
 
 window.addEventListener("load", function (event) { mexint_onLoad(event); }, false);

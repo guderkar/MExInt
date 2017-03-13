@@ -2,6 +2,8 @@ var ews = require('ews-javascript-api');
 ews.EwsLogging.DebugLogEnabled = false;
 
 var args = process.argv.slice(2);
+var hardDelete = args[0];
+var deleteMode = (hardDelete == "true") ? ews.DeleteMode.HardDelete : ews.DeleteMode.MoveToDeletedItems;
 var IDs = [];
 var data = "";
 
@@ -59,7 +61,7 @@ process.stdin.on('end', () => {
     });
 
     d.run(function () {
-        exch.DeleteItems(IDs, ews.DeleteMode.MoveToDeletedItems).then(function (response) {
+        exch.DeleteItems(IDs, deleteMode).then(function (response) {
 
         }, function (error) {
             process.stdout.write("ERROR");

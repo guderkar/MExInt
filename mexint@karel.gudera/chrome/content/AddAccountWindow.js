@@ -143,14 +143,35 @@ function addAccount ()
     identity.email = username;
     // identity.smtpServerKey = server.key;
 
-    // var draftFolder = server.rootFolder.addSubfolder("Drafts");
-    // draftFolder.setFlag(Components.interfaces.nsMsgFolderFlags.Drafts);
+    Components.utils.import("resource://gre/modules/Services.jsm");
+	var msgProps = Services.strings.createBundle("chrome://messenger/locale/messenger.properties");
+	server.rootFolder.QueryInterface(Components.interfaces.nsIMsgLocalMailFolder);
 
-    // var fccFolder = server.rootFolder.addSubfolder("Sent Items");
-    // fccFolder.setFlag(Components.interfaces.nsMsgFolderFlags.SentMail);
+	var inboxFolder = server.rootFolder.getFolderWithFlags(Components.interfaces.nsMsgFolderFlags.Inbox)
+	var trashFolder = server.rootFolder.getFolderWithFlags(Components.interfaces.nsMsgFolderFlags.Trash)
 
-    // var outboxFolder = server.rootFolder.addSubfolder("Outbox");
-    // outboxFolder.setFlag(Components.interfaces.nsMsgFolderFlags.Outbox);
+    var draftsFolder = server.rootFolder.createLocalSubfolder("Drafts");
+    draftsFolder.setFlag(Components.interfaces.nsMsgFolderFlags.Drafts);
+    draftsFolder.prettyName = msgProps.GetStringFromName("draftsFolderName");
+
+    var fccFolder = server.rootFolder.createLocalSubfolder("Sent");
+    fccFolder.setFlag(Components.interfaces.nsMsgFolderFlags.SentMail);
+    fccFolder.prettyName = msgProps.GetStringFromName("sentFolderName");
+
+    var junkFolder = server.rootFolder.createLocalSubfolder("Junk");
+    junkFolder.setFlag(Components.interfaces.nsMsgFolderFlags.Junk);
+    junkFolder.prettyName = msgProps.GetStringFromName("junkFolderName");
+
+    var outboxFolder = server.rootFolder.createLocalSubfolder("Outbox");
+    outboxFolder.setFlag(Components.interfaces.nsMsgFolderFlags.Queue);
+    outboxFolder.prettyName = msgProps.GetStringFromName("outboxFolderName");
+
+    inboxFolder.setStringProperty("lock", "false");
+    trashFolder.setStringProperty("lock", "false");
+    draftsFolder.setStringProperty("lock", "false");
+    fccFolder.setStringProperty("lock", "false");
+    junkFolder.setStringProperty("lock", "false");
+    outboxFolder.setStringProperty("lock", "false");
 
     var account = accountManager.createAccount();
     account.incomingServer = server;
