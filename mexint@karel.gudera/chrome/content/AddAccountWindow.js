@@ -8,6 +8,7 @@ var OS = Components.classes["@mozilla.org/xre/app-info;1"]
 var node = (OS == "WINNT") ? "node.exe" : "node";
 var nodePath = FileUtils.getFile("ProfD", ["extensions", "mexint@karel.gudera", "components", node]);
 var authPath = FileUtils.getFile("ProfD", ["extensions", "mexint@karel.gudera", "server", "authentication.js"]);
+var getEmailPath = FileUtils.getFile("ProfD", ["extensions", "mexint@karel.gudera", "server", "get_email_address.js"]);
 
 var preventDefaultListener = function (event)
 {
@@ -44,6 +45,7 @@ function addAccount ()
 	var authType = document.getElementById("authType").value;
 	var TLS = document.getElementById("TLS").checked.toString();
 	var domain = URL.replace(/(.*https?:\/\/)(.*?)(\/.*)/, "$2");
+	var email;
 
 	var promptService = Components.classes["@mozilla.org/embedcomp/prompt-service;1"]
                         .getService(Components.interfaces.nsIPromptService);
@@ -107,6 +109,36 @@ function addAccount ()
 		return;
 	}
 
+	p = subprocess.call({
+		command: nodePath.path,
+		arguments: [getEmailPath.path],
+		//environment: [],
+		charset: "UTF-8",
+		//workdir: "",
+
+		stdin: function (stdin) {
+			stdin.write(authData_base64);
+			stdin.close();
+		},
+
+		done: function (result) {
+			exitCode = result.exitCode;
+			stdout = result.stdout;
+			stderr = result.stderr;
+			email = stdout;
+		},
+
+		mergeStderr: false
+	});
+	p.wait();
+
+	if ( stdout == "ERROR" )
+	{
+		promptService.alert(window, "Error", "Can't get information from the Exchange server");
+		enableWindow();
+		return;
+	}
+
 	var accountManager = Components.classes["@mozilla.org/messenger/account-manager;1"]
                          .getService(Components.interfaces.nsIMsgAccountManager);
     var passwordManager = Components.classes["@mozilla.org/login-manager;1"]
@@ -135,12 +167,13 @@ function addAccount ()
     server.setCharValue("authType", authType);
     server.setCharValue("TLS", TLS);
     server.setBoolValue("mexint", true);
+    server.setBoolValue("locked", false);
     server.doBiff = false;
     server.port = 65535;
 
     var identity = accountManager.createIdentity();
     identity.fullName = name;
-    identity.email = username;
+    identity.email = email;
     // identity.smtpServerKey = server.key;
 
     Components.utils.import("resource://gre/modules/Services.jsm");
@@ -162,16 +195,16 @@ function addAccount ()
     junkFolder.setFlag(Components.interfaces.nsMsgFolderFlags.Junk);
     junkFolder.prettyName = msgProps.GetStringFromName("junkFolderName");
 
-    var outboxFolder = server.rootFolder.createLocalSubfolder("Outbox");
+    var outboxFolder = server.rootFolder.createLocalSubfolder("Unsent Messages");
     outboxFolder.setFlag(Components.interfaces.nsMsgFolderFlags.Queue);
     outboxFolder.prettyName = msgProps.GetStringFromName("outboxFolderName");
 
-    inboxFolder.setStringProperty("lock", "false");
-    trashFolder.setStringProperty("lock", "false");
-    draftsFolder.setStringProperty("lock", "false");
-    fccFolder.setStringProperty("lock", "false");
-    junkFolder.setStringProperty("lock", "false");
-    outboxFolder.setStringProperty("lock", "false");
+    // inboxFolder.setStringProperty("lock", "false");
+    // trashFolder.setStringProperty("lock", "false");
+    // draftsFolder.setStringProperty("lock", "false");
+    // fccFolder.setStringProperty("lock", "false");
+    // junkFolder.setStringProperty("lock", "false");
+    // outboxFolder.setStringProperty("lock", "false");
 
     var account = accountManager.createAccount();
     account.incomingServer = server;

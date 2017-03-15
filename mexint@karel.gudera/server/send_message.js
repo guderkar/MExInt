@@ -15,7 +15,7 @@ process.stdin.on('readable', () => {
 });
 
 process.stdin.on('end', () => {
-	var [authData_base64, msgBody_base64, mime_base64] = data.split('\n');
+	var [authData_base64, mime_base64] = data.split('\n');
 	var [ URL,
 		  username,
 		  password,
@@ -47,12 +47,10 @@ process.stdin.on('end', () => {
 			exch.XHRApi = ntlmXHRApi;
 		}
 
-		var escapeHTML = require('escape-html');
 		var message = new ews.EmailMessage(exch);
 		var mimeContent = new ews.MimeContent();
 		mimeContent.Content = mime_base64;
 		message.MimeContent = mimeContent;
-		message.Body = new ews.MessageBody(ews.BodyType.HTML, escapeHTML(Buffer.from(msgBody_base64, "base64").toString("utf-8")));
 
 		for ( var i = 0; i < bccRecipients.length; i++ )
 			message.BccRecipients.Add(bccRecipients[i]);

@@ -91,7 +91,7 @@ function fetchMessages (IDs, server, folder, URL, username, password, authType, 
 		done: function (result) {
 			exitCode = result.exitCode;
 			stderr = result.stderr;
-			folder.setStringProperty("lock", "false");
+			server.setBoolValue("locked", false);
 			showNotification(folder.prettiestName + " - " + server.prettyName + ": Received " + IDs.length + " of " + IDs.length + " message(s)");
 		},
 
@@ -142,7 +142,7 @@ function parseHeaders (headers, server, folder, URL, username, password, authTyp
 
 	for (let i = 0; i < localHdrNum; i++)
 	{
-		if ( ! (serverHeaders.indexOf(localHeaders[i]) > -1) ) // local hdr not in server headers => delete it
+		if ( ! (serverHeaders.indexOf(localHeaders[i]) > -1) && localMsgDBHdrs[i].getProperty("local") != "true" ) // local hdr not in server headers => delete it
 			toDelete.push(localMsgDBHdrs[i]);
 	}
 
@@ -158,7 +158,7 @@ function parseHeaders (headers, server, folder, URL, username, password, authTyp
 	}
 	else
 	{
-		folder.setStringProperty("lock", "false");
+		server.setBoolValue("locked", false);
 		showNotification(folder.prettiestName + " - " + server.prettyName + ": No messages to download");
 	}
 }
@@ -211,7 +211,7 @@ function getHeaders (server, folder, URL, username, password, authType, TLS)
 
 			if ( stdout == "ERROR" )
 			{
-				folder.setStringProperty("lock", "false");
+				server.setBoolValue("locked", false);
 				showNotification(server.prettyName + ": Error connecting to Exchange server");
 				return;
 			}
@@ -225,10 +225,10 @@ function getHeaders (server, folder, URL, username, password, authType, TLS)
 
 function getMessages (server, folder)
 {
-	if ( folder.getStringProperty("lock") == "true" )
+	if ( server.getBoolValue("locked") )
 		return;
 
-	folder.setStringProperty("lock", "true");
+	server.setBoolValue("locked", true);
 	showNotification(folder.prettiestName + " - " + server.prettyName + ": Checking for new messages...");
 
 	var URL = server.getCharValue("ewsURL");
@@ -262,10 +262,10 @@ function deleteMessages (server, folder)
 {
 	var msgDBHdrs = gFolderDisplay.selectedMessages;
 
-	if ( folder.getStringProperty("lock") == "true" )
+	if ( server.getBoolValue("locked") )
 		return;
 
-	folder.setStringProperty("lock", "true");
+	server.setBoolValue("locked", true);
 	showNotification(folder.prettiestName + " - " + server.prettyName + ": Deleting " + msgDBHdrs.length + " message(s)...");
 
 	var URL = server.getCharValue("ewsURL");
@@ -329,13 +329,13 @@ function deleteMessages (server, folder)
 
 			if ( stdout == "ERROR" )
 			{
-				folder.setStringProperty("lock", "false");
+				server.setBoolValue("locked", false);
 				showNotification(server.prettyName + ": Error connecting to Exchange server");
 				return;
 			}
 
 			deleteMsgDBHdrs(msgDBHdrs, folder);
-			folder.setStringProperty("lock", "false");
+			server.setBoolValue("locked", false);
 			showNotification(folder.prettiestName + " - " + server.prettyName + ": Deleted " + msgDBHdrs.length + " message(s)");
 		},
 
@@ -343,39 +343,31 @@ function deleteMessages (server, folder)
 	});
 }
 
+function sendUnsendMsgs (server, folder)
+{
+	// TODO
+	alert("Not implemented yet");
+}
+
 function mexint_onLoad (event)
 {
-	// unlock all exchange folders
+	// unlock all exchange incoming server locks and check for new messages in inbox
 	var accountManager = Components.classes["@mozilla.org/messenger/account-manager;1"]
                          .getService(Components.interfaces.nsIMsgAccountManager);
 
 	var accounts = accountManager.accounts;
-	var exchangeServers = [];
 
 	for ( var i = 0; i < accounts.length; i++ )
 	{
 		var account = accounts.queryElementAt(i, Components.interfaces.nsIMsgAccount);
 		var server = account.incomingServer;
-		var rootFolder = account.incomingServer.rootFolder;
 
 		if ( server.getBoolValue("mexint") )
-			exchangeServers.push(server);
-
-		if ( server.getBoolValue("mexint") && rootFolder.hasSubFolders )
 		{
-			var subFolders = rootFolder.subFolders;
-
-			while ( subFolders.hasMoreElements() )
-			{
-				var folder = subFolders.getNext().QueryInterface(Components.interfaces.nsIMsgFolder);
-				folder.setStringProperty("lock", "false");
-			}
+			server.setBoolValue("locked", false);
+			getMessages(server, server.rootFolder.getFolderWithFlags(Components.interfaces.nsMsgFolderFlags.Inbox));
 		}
 	}
-
-	// check for new messages in inbox at startup
-	for ( var i = 0; i < exchangeServers.length; i++ )
-		getMessages(server, server.rootFolder.getFolderWithFlags(Components.interfaces.nsMsgFolderFlags.Inbox));
 
 	// override original function
 	GetNewMsgs = function (server, folder)
@@ -468,10 +460,32 @@ function mexint_onLoad (event)
 		'goDoCommand("cmd_delete");');
 
 	// override original function
-	// SendUnsentMessages = function ()
-	// {
-	// 	TODO
-	// }
+	var IsSendUnsentMsgsEnabled_orig = IsSendUnsentMsgsEnabled;
+	IsSendUnsentMsgsEnabled = function (unsentMsgsFolder)
+	{
+		var folder = gFolderTreeView.getSelectedFolders()[0];
+
+		if ( folder.server.getBoolValue("mexint") && folder.getFolderWithFlags(Components.interfaces.nsMsgFolderFlags.Queue) )
+			return true;
+
+		return IsSendUnsentMsgsEnabled_orig(unsentMsgsFolder);
+	}
+
+	// override original function
+	var SendUnsentMessages_orig = SendUnsentMessages;
+	SendUnsentMessages = function ()
+	{
+		var folder = gFolderTreeView.getSelectedFolders()[0];
+		var server = folder.server;
+
+		if ( server.getBoolValue("mexint") && folder.getFolderWithFlags(Components.interfaces.nsMsgFolderFlags.Queue) )
+		{
+			sendUnsendMsgs(server, folder);
+			return;
+		}
+
+		SendUnsentMessages_orig();
+	}
 
 	// handle opening folder event
 	window.document.getElementById('folderTree').addEventListener("select", function () {

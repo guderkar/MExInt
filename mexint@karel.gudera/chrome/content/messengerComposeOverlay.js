@@ -80,9 +80,13 @@ function composeAndSendMessage (server)
 		}
 	}
 
+	gMsgCompose.editor.QueryInterface(Components.interfaces.nsIEditorMailSupport);
+	gMsgCompose.SetDocumentCharset("utf-8");
+
 	var msgBody = gMsgCompose.editor.outputToString("text/html", 0);
 	var attachEnum = gMsgCompose.compFields.attachments;
 	var attachments = [];
+	var objects = gMsgCompose.editor.getEmbeddedObjects();
 
 	while ( attachEnum.hasMoreElements() )
 	{
@@ -103,9 +107,8 @@ function composeAndSendMessage (server)
 			var bstream = Components.classes["@mozilla.org/binaryinputstream;1"]
 			              .createInstance(Components.interfaces.nsIBinaryInputStream);
 			bstream.setInputStream(istream);
-			var bytes = bstream.readBytes(bstream.available()).replace(/^From:.*(\r\n|\r|\n)/m, ""); // remove From field, because exchange doesn't need it
+			var bytes = bstream.readBytes(bstream.available());
 			var mimeContent_base64 = btoa(bytes);
-			var body_base64 = base64.encode(msgBody, "utf-8");
 			istream.close();
 			bstream.close();
 
@@ -131,7 +134,7 @@ function composeAndSendMessage (server)
 				//workdir: "",
 
 				stdin: function (stdin) {
-					stdin.write(authData_base64 + '\n' + body_base64 + '\n' + mimeContent_base64);
+					stdin.write(authData_base64 + '\n' + mimeContent_base64);
 					stdin.close();
 				},
 
@@ -177,11 +180,11 @@ function composeAndSendMessage (server)
 
     msgSend.createRFC822Message(getCurrentIdentity(),
                                 gMsgCompose.compFields,
-                                null,
-                                null,
+                                gMsgCompose.editor.contentsMIMEType,
+                                encodeUTF8(msgBody),
                                 false,
                                 attachments,
-                                null,
+                                null /* objects */,
                                 gSendListener);
 }
 

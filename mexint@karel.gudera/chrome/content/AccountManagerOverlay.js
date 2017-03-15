@@ -38,9 +38,8 @@ function accountStillExists (account)
 
 function mexint_onLoad (event)
 {
-	onRemoveAccountOrig = onRemoveAccount;
-
 	// override original function
+	var onRemoveAccount_orig = onRemoveAccount;
 	onRemoveAccount = function (event) 
 	{
 		var account = currentAccount;
@@ -48,7 +47,7 @@ function mexint_onLoad (event)
 		var username = server.realUsername;
 		var isMexint = server.getBoolValue("mexint");
 
-		onRemoveAccountOrig(event);
+		onRemoveAccount_orig(event);
 		
 		if ( isMexint && ! accountStillExists(account) )
 			removeLoginManagerInfo(username);
