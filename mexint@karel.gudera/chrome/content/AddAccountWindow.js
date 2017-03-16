@@ -8,7 +8,6 @@ var OS = Components.classes["@mozilla.org/xre/app-info;1"]
 var node = (OS == "WINNT") ? "node.exe" : "node";
 var nodePath = FileUtils.getFile("ProfD", ["extensions", "mexint@karel.gudera", "components", node]);
 var authPath = FileUtils.getFile("ProfD", ["extensions", "mexint@karel.gudera", "server", "authentication.js"]);
-var getEmailPath = FileUtils.getFile("ProfD", ["extensions", "mexint@karel.gudera", "server", "get_email_address.js"]);
 
 var preventDefaultListener = function (event)
 {
