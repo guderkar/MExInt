@@ -154,10 +154,8 @@ function composeAndSendMessage (server, deliveryMode)
 			else if ( deliveryMode == nsIMsgCompDeliverMode.SaveAsDraft || deliveryMode == nsIMsgCompDeliverMode.AutoSaveAsDraft )
 			{
 				// TODO
-				return;
-			}
-			else
-			{
+				alert("Not implemented yet");
+				enableWindow();
 				return;
 			}
 
