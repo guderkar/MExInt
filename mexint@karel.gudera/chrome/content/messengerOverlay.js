@@ -10,6 +10,7 @@ var nodePath = FileUtils.getFile("ProfD", ["extensions", "mexint@karel.gudera", 
 var getMsgPath = FileUtils.getFile("ProfD", ["extensions", "mexint@karel.gudera", "server", "get_messages.js"]);
 var getHdrPath = FileUtils.getFile("ProfD", ["extensions", "mexint@karel.gudera", "server", "get_headers.js"]);
 var delMsgPath = FileUtils.getFile("ProfD", ["extensions", "mexint@karel.gudera", "server", "delete_messages.js"]);
+var sendUnsentMsgsPath = FileUtils.getFile("ProfD", ["extensions", "mexint@karel.gudera", "server", "send_unsent_messages.js"]);
 
 function showNotification (notificationMessage)
 {
@@ -345,8 +346,117 @@ function deleteMessages (server, folder)
 
 function sendUnsendMsgs (server, folder)
 {
-	// TODO
-	alert("Not implemented yet");
+	var msgDBHdrs = [];
+
+	if ( server.getBoolValue("locked") )
+		return;
+
+	server.setBoolValue("locked", true);
+
+	for (let msgHdr in fixIterator(folder.messages, Components.interfaces.nsIMsgDBHdr)) 
+		msgDBHdrs.push(msgHdr);
+
+	showNotification(folder.prettiestName + " - " + server.prettyName + ": Sending " + msgDBHdrs.length + " unsent message(s)...");
+
+	var URL = server.getCharValue("ewsURL");
+	var username = server.username;
+	var password;
+	var authType = server.getCharValue("authType");
+	var TLS = server.getCharValue("TLS");
+
+	var passwordManager = Components.classes["@mozilla.org/login-manager;1"]
+                          .getService(Components.interfaces.nsILoginManager);
+
+    var nsLoginInfo = new Components.Constructor("@mozilla.org/login-manager/loginInfo;1",
+    	                                         Components.interfaces.nsILoginInfo,
+    	                                         "init");
+
+    var logins = passwordManager.findLogins({}, 'chrome://mexint', null, 'User Registration');
+      
+	for ( var i = 0; i < logins.length; i++ )
+	{
+		if ( logins[i].username == username )
+		{
+			password = logins[i].password;
+			break;
+		}
+	}
+
+	var localMessages = [];
+	var remoteMessages = [];
+	var IDsStr = "";
+	var messages = "";
+
+	for ( var i = 0; i < msgDBHdrs.length; i++ )
+	{
+		if ( msgDBHdrs[i].getProperty("local") != "true" )
+			remoteMessages.push(msgDBHdrs[i]);
+	}
+
+	for ( var i = 0; i < msgDBHdrs.length; i++ )
+	{
+		if ( msgDBHdrs[i].getProperty("local") == "true" )
+			localMessages.push(msgDBHdrs[i]);
+	}
+
+	for ( var i = 0; i < remoteMessages.length; i++ )
+	{
+		if ( i == remoteMessages.length -1 )
+			IDsStr += remoteMessages[i].messageId;
+		else
+			IDsStr += remoteMessages[i].messageId + '\n';
+	}
+
+	for ( var i = 0; i < localMessages.length; i++ )
+	{
+		if ( i == localMessages.length -1 )
+			messages += localMessages[i].getProperty("bcc") + '\n' + localMessages[i].getProperty("mime_base64");
+		else
+			messages += localMessages[i].getProperty("bcc") + '\n' + localMessages[i].getProperty("mime_base64") + '\n';
+	}
+	
+	let authData_base64 = base64.encode(URL      + '\n' +
+                                        username + '\n' + 
+                                        password + '\n' +
+                                        authType + '\n' +
+                                        TLS,
+                                        "utf-8");
+
+	let IDs_base64 = base64.encode(IDsStr, "utf-8");
+
+	let messages_base64 = base64.encode(messages, "utf-8");
+
+	var p = subprocess.call({
+		command: nodePath.path,
+		arguments: [sendUnsentMsgsPath.path],
+		//environment: [],
+		charset: "UTF-8",
+		//workdir: "",
+
+		stdin: function (stdin) {
+			stdin.write(authData_base64 + '\n' + IDs_base64 + '\n' + messages_base64);
+			stdin.close();
+		},
+
+		done: function (result) {
+			exitCode = result.exitCode;
+			stdout = result.stdout;
+			stderr = result.stderr;
+
+			if ( stdout == "ERROR" )
+			{
+				server.setBoolValue("locked", false);
+				showNotification(server.prettyName + ": Error connecting to Exchange server");
+				return;
+			}
+
+			deleteMsgDBHdrs(msgDBHdrs, folder);
+			server.setBoolValue("locked", false);
+			showNotification(folder.prettiestName + " - " + server.prettyName + ": Done sending " + msgDBHdrs.length + " unsent message(s)");
+		},
+
+		mergeStderr: false
+	});
 }
 
 function mexint_onLoad (event)
@@ -465,7 +575,9 @@ function mexint_onLoad (event)
 	{
 		var folder = gFolderTreeView.getSelectedFolders()[0];
 
-		if ( folder.server.getBoolValue("mexint") && folder.getFolderWithFlags(Components.interfaces.nsMsgFolderFlags.Queue) )
+		if ( folder.server.getBoolValue("mexint") &&
+			 folder.getFolderWithFlags(Components.interfaces.nsMsgFolderFlags.Queue) &&
+			 folder.getTotalMessages(false) > 0 )
 			return true;
 
 		return IsSendUnsentMsgsEnabled_orig(unsentMsgsFolder);

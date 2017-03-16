@@ -94,7 +94,7 @@ function addAccount ()
 	});
 	p.wait();
     
-	if ( stdout != "OK" )
+	if ( stdout.substring(0, 2) != "OK" )
 	{
 		Components.utils.reportError("mexint - node\n\n" +
 			                         "stdout:\n" +
@@ -102,42 +102,15 @@ function addAccount ()
 			                         "stderr:\n" +
 			                         stderr);
 		promptService.alert(window, "Error", "Failed to add account\n\n" + 
-			                                 "If you feel like you should not experience this issuse\n" +
-			                                 "please open the error console (CTRL + SHIFT + J), filter\n" +
-			                                 "mexint and send the error to guderkar@fit.cvut.cz. Thank you.");
+			                                 "If you feel like you should not experience this issuse please open\n" +
+			                                 "the error console (CTRL + SHIFT + J), filter mexint and report the\n" +
+			                                 "error to Issues on 'www.github.com/guderkar/mexint' or send it to\n"  +
+			                                 "'guderkar@fit.cvut.cz'. Thank you.");
 		enableWindow();
 		return;
 	}
 
-	p = subprocess.call({
-		command: nodePath.path,
-		arguments: [getEmailPath.path],
-		//environment: [],
-		charset: "UTF-8",
-		//workdir: "",
-
-		stdin: function (stdin) {
-			stdin.write(authData_base64);
-			stdin.close();
-		},
-
-		done: function (result) {
-			exitCode = result.exitCode;
-			stdout = result.stdout;
-			stderr = result.stderr;
-			email = stdout;
-		},
-
-		mergeStderr: false
-	});
-	p.wait();
-
-	if ( stdout == "ERROR" )
-	{
-		promptService.alert(window, "Error", "Can't get information from the Exchange server");
-		enableWindow();
-		return;
-	}
+	email = stdout.split('\n')[1];
 
 	var accountManager = Components.classes["@mozilla.org/messenger/account-manager;1"]
                          .getService(Components.interfaces.nsIMsgAccountManager);

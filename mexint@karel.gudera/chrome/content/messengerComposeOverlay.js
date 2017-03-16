@@ -52,7 +52,7 @@ function enableWindow ()
 	window.setCursor("auto");
 }
 
-function composeAndSendMessage (server)
+function composeAndSendMessage (server, deliveryMode)
 {
 	disableWindow();
 
@@ -112,8 +112,54 @@ function composeAndSendMessage (server)
 			istream.close();
 			bstream.close();
 
-			// we need to pass bcc recipients as argument, because this field doesn't belong to MIME content
+			try
+			{
+				aReturnFile.remove(false);
+			}
+			catch (ex) {}
+
+			// we need to pass bcc recipients separately, because this field doesn't belong to MIME content
 			var bccRecipients = gMsgCompose.compFields.bcc.replace(/\s/g, "");
+
+			if ( deliveryMode == nsIMsgCompDeliverMode.Now )
+			{
+				// do nothing
+			}
+			else if ( deliveryMode == nsIMsgCompDeliverMode.Later )
+			{
+				var d = new Date().toString().split(' ');
+                var weekday = d[0];
+                var month = d[1];
+                var day = d[2];
+                var year = d[3];
+                var time = d[4];
+                var date = weekday + " " + month + " " + day + " " + time + " " + year;
+
+				var messageSource = "From - " + date + "\r\n" +
+                                    "X-Mozilla-Status: 0000" + "\r\n" +
+                                    "X-Mozilla-Status2: 00000000\r\n" +
+                                    bytes;
+
+                var outboxFolder = server.rootFolder.getFolderWithFlags(Components.interfaces.nsMsgFolderFlags.Queue);
+				outboxFolder.QueryInterface(Components.interfaces.nsIMsgLocalMailFolder);
+				var message = outboxFolder.addMessage(messageSource);
+				message.setProperty("local", "true");
+				message.setProperty("mime_base64", mimeContent_base64);
+				message.setProperty("bcc", bccRecipients);
+
+				enableWindow();
+				window.close();
+				return;
+			}
+			else if ( deliveryMode == nsIMsgCompDeliverMode.SaveAsDraft || deliveryMode == nsIMsgCompDeliverMode.AutoSaveAsDraft )
+			{
+				// TODO
+				return;
+			}
+			else
+			{
+				return;
+			}
 
 			var exitCode;
 			var stdout;
@@ -128,13 +174,13 @@ function composeAndSendMessage (server)
 
 			var p = subprocess.call({
 				command: nodePath.path,
-				arguments: [sendMsgPath.path, bccRecipients],
+				arguments: [sendMsgPath.path],
 				//environment: [],
 				charset: "UTF-8",
 				//workdir: "",
 
 				stdin: function (stdin) {
-					stdin.write(authData_base64 + '\n' + mimeContent_base64);
+					stdin.write(authData_base64 + '\n' + bccRecipients + '\n' + mimeContent_base64);
 					stdin.close();
 				},
 
@@ -147,12 +193,6 @@ function composeAndSendMessage (server)
 				mergeStderr: false
 			});
 			p.wait();
-
-			try
-			{
-				aReturnFile.remove(false);
-			}
-			catch (ex) {}
 
 			var promptService = Components.classes["@mozilla.org/embedcomp/prompt-service;1"]
 			                    .getService(Components.interfaces.nsIPromptService);
@@ -197,15 +237,17 @@ window.addEventListener("compose-send-message", function (event) {
 	var msgType = msgcomposeWindow.getAttribute("msgtype");
 	window.windowOCAttr = document.documentElement.getAttribute("onclose");
   
-	// do not continue unless this is an actual send event  
-	if ( ! (msgType == nsIMsgCompDeliverMode.Now || msgType == nsIMsgCompDeliverMode.Later) )  
+	if ( ! (msgType == nsIMsgCompDeliverMode.Now         || 
+		    msgType == nsIMsgCompDeliverMode.Later       ||
+		    msgType == nsIMsgCompDeliverMode.SaveAsDraft ||
+		    msgType == nsIMsgCompDeliverMode.AutoSaveAsDraft) )
 		return;
 
 	if ( server.getBoolValue("mexint") )
 	{
 		event.preventDefault();
 		event.stopPropagation();
-		composeAndSendMessage(server);
+		composeAndSendMessage(server, msgType);
 	}
 
 }, true);

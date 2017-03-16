@@ -2,7 +2,6 @@ var ews = require('ews-javascript-api');
 ews.EwsLogging.DebugLogEnabled = false;
 
 var args = process.argv.slice(2);
-var bccRecipients = (args[0] == "") ? [] : args[0].split(',');
 var data = "";
 
 process.stdin.setEncoding('utf8');
@@ -15,12 +14,13 @@ process.stdin.on('readable', () => {
 });
 
 process.stdin.on('end', () => {
-	var [authData_base64, mime_base64] = data.split('\n');
+	var [authData_base64, bccRecipients, mime_base64] = data.split('\n');
 	var [ URL,
 		  username,
 		  password,
 		  authType,
 		  TLS ] = Buffer.from(authData_base64, "base64").toString("utf-8").split('\n');
+	bccRecipients = (bccRecipients == "") ? [] : bccRecipients.split(',');
 
 	if ( TLS == "false" )
 		process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
@@ -55,7 +55,7 @@ process.stdin.on('end', () => {
 		for ( var i = 0; i < bccRecipients.length; i++ )
 			message.BccRecipients.Add(bccRecipients[i]);
 
-		message.SendAndSaveCopy().then(function (result) {
+		message.SendAndSaveCopy().then(function () {
 
 		}, function (error) {
 			process.stdout.write("ERROR");

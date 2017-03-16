@@ -54,9 +54,14 @@ process.stdin.on('end', () => {
 	});
 
 	d.run(function () {
-		exch.FindFolders(ews.WellKnownFolderName.Root, new ews.FolderView(1)).then(function (response) {
-			process.stdout.write("OK");
-		    process.exit(0);
+		ews.Folder.Bind(exch, ews.WellKnownFolderName.Inbox, new ews.PropertySet(ews.BasePropertySet.IdOnly)).then(function (response) {
+			var aiAlternateid = new ews.AlternateId(ews.IdFormat.EwsId, response.Id.UniqueId, "mailbox@domain.com");
+			exch.ConvertId(aiAlternateid, ews.IdFormat.EwsId).then(function (response) {
+				process.stdout.write("OK" + '\n' + response.Mailbox);
+			}, function (error) {
+				process.stdout.write("ERROR");
+		    	process.exit(1);
+			});
 		}, function (error) {
 			process.stdout.write("ERROR");
 		    process.exit(1);
