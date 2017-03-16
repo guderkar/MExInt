@@ -52,6 +52,22 @@ function enableWindow ()
 	window.setCursor("auto");
 }
 
+function fileToAttachment (file)
+{
+	Components.utils.import("resource:///modules/mailServices.js");
+
+	let fileHandler = Services.io.getProtocolHandler("file")
+	                  .QueryInterface(Components.interfaces.nsIFileProtocolHandler);
+
+	let attachment = Components.classes["@mozilla.org/messengercompose/attachment;1"]
+	                 .createInstance(Components.interfaces.nsIMsgAttachment);
+
+	attachment.url = fileHandler.getURLSpecFromFile(file);
+	attachment.size = file.fileSize;
+
+	return attachment;
+}
+
 function composeAndSendMessage (server, deliveryMode)
 {
 	disableWindow();
@@ -83,6 +99,37 @@ function composeAndSendMessage (server, deliveryMode)
 	gMsgCompose.editor.QueryInterface(Components.interfaces.nsIEditorMailSupport);
 	gMsgCompose.SetDocumentCharset("utf-8");
 
+	var vCardAttachment;
+	var vCardAttachmentFile;
+	var vCardAttachmentFilename = getCurrentIdentity().fullName + ".vcf";
+
+	if ( gMsgCompose.compFields.attachVCard )
+	{
+		Components.utils.import("resource://gre/modules/FileUtils.jsm");
+
+		var vCardAttachmentFile = FileUtils.getFile("TmpD", [vCardAttachmentFilename]);
+		vCardAttachmentFile.createUnique(Components.interfaces.nsIFile.NORMAL_FILE_TYPE, FileUtils.PERMS_FILE);
+
+		var foStream = Components.classes["@mozilla.org/network/file-output-stream;1"]
+		               .createInstance(Components.interfaces.nsIFileOutputStream);
+
+		foStream.init(vCardAttachmentFile, 0x02 | 0x08 | 0x20, 0666, 0); 
+
+		var converter = Components.classes["@mozilla.org/intl/converter-output-stream;1"]
+		                .createInstance(Components.interfaces.nsIConverterOutputStream);
+
+		converter.init(foStream, "utf-8", 0, 0);
+		converter.writeString(unescape(getCurrentIdentity().escapedVCard));
+		converter.close();
+		foStream.close();
+
+		vCardAttachment = fileToAttachment(vCardAttachmentFile);
+		vCardAttachment.name = vCardAttachmentFilename;
+		vCardAttachment.contentType = "text/x-vcard";
+		vCardAttachment.charset = "utf-8";
+		gMsgCompose.compFields.addAttachment(vCardAttachment);
+	}
+
 	var msgBody = gMsgCompose.editor.outputToString("text/html", 0);
 	var attachEnum = gMsgCompose.compFields.attachments;
 	var attachments = [];
@@ -91,8 +138,9 @@ function composeAndSendMessage (server, deliveryMode)
 	while ( attachEnum.hasMoreElements() )
 	{
 		var attach = attachEnum.getNext().QueryInterface(Components.interfaces.nsIMsgAttachment);
-		attachments.push(attach)
+		attachments.push(attach);
 	}
+
 
 	var gSendListener = {
 		// nsIMsgSendListener
@@ -109,12 +157,13 @@ function composeAndSendMessage (server, deliveryMode)
 			bstream.setInputStream(istream);
 			var bytes = bstream.readBytes(bstream.available());
 			var mimeContent_base64 = btoa(bytes);
-			istream.close();
 			bstream.close();
+			istream.close();
 
 			try
 			{
 				aReturnFile.remove(false);
+				vCardAttachmentFile.remove(false);
 			}
 			catch (ex) {}
 

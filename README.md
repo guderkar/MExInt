@@ -9,7 +9,7 @@ Account Settings -> Account Actions -> Add Microsoft Exchange Account
 
 ## Supported Operations
 1. Fetching e-mail messages from server - works by clicking any Get Messages button or selecting folder (basic folders supported i.e. Inbox, Drafts, Sent, Junk, Trash, Outbox)
-2. Sending e-mail messages - works in standard way (not all of the Thunderbird features work e.g. vCard, embeded images)
+2. Sending e-mail messages - works in standard way (not all of the Thunderbird features work e.g. embeded images)
 3. Deleting messages - works in standard way
 
 ## Supported Exchange versions
