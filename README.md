@@ -1,8 +1,6 @@
 # MExInt
-========
 
 ## Primitive Thunderbird plugin for communicating with MS Exchange via Exchange Web Services (EWS)
-==================================================================================================
 
 ## Adding Exchange Account
 Account Settings -> Account Actions -> Add Microsoft Exchange Account
