@@ -52,22 +52,6 @@ function enableWindow ()
 	window.setCursor("auto");
 }
 
-function fileToAttachment (file)
-{
-	Components.utils.import("resource:///modules/mailServices.js");
-
-	let fileHandler = Services.io.getProtocolHandler("file")
-	                  .QueryInterface(Components.interfaces.nsIFileProtocolHandler);
-
-	let attachment = Components.classes["@mozilla.org/messengercompose/attachment;1"]
-	                 .createInstance(Components.interfaces.nsIMsgAttachment);
-
-	attachment.url = fileHandler.getURLSpecFromFile(file);
-	attachment.size = file.fileSize;
-
-	return attachment;
-}
-
 function composeAndSendMessage (server, deliveryMode)
 {
 	disableWindow();
@@ -101,7 +85,7 @@ function composeAndSendMessage (server, deliveryMode)
 
 	var vCardAttachment;
 	var vCardAttachmentFile;
-	var vCardAttachmentFilename = getCurrentIdentity().fullName + ".vcf";
+	var vCardAttachmentFilename = getCurrentIdentity().email.split('@')[0].replace(/\./g, '_') + ".vcf";
 
 	if ( gMsgCompose.compFields.attachVCard )
 	{
@@ -123,7 +107,7 @@ function composeAndSendMessage (server, deliveryMode)
 		converter.close();
 		foStream.close();
 
-		vCardAttachment = fileToAttachment(vCardAttachmentFile);
+		vCardAttachment = FileToAttachment(vCardAttachmentFile);
 		vCardAttachment.name = vCardAttachmentFilename;
 		vCardAttachment.contentType = "text/x-vcard";
 		vCardAttachment.charset = "utf-8";
@@ -271,7 +255,7 @@ function composeAndSendMessage (server, deliveryMode)
                                 encodeUTF8(msgBody),
                                 false,
                                 attachments,
-                                null /* objects */,
+                                objects,
                                 gSendListener);
 }
 
