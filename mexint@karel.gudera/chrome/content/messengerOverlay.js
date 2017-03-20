@@ -480,25 +480,17 @@ function mexint_onLoad (event)
 	}
 
 	// override original function
+	var GetNewMsgs_orig = GetNewMsgs;
 	GetNewMsgs = function (server, folder)
 	{
-		// START MY CODE
 		if ( server.getBoolValue("mexint") )
 		{
 			var auxFolder = folder.isServer ? server.rootFolder.getFolderWithFlags(Components.interfaces.nsMsgFolderFlags.Inbox) : folder;
 			getMessages(server, auxFolder);
 			return;
 		}
-		// END MY CODE
 
-		// Note that for Global Inbox folder.server != server when we want to get
-		// messages for a specific account.
-
-		const nsIMsgFolder = Components.interfaces.nsIMsgFolder;
-		// Whenever we do get new messages, clear the old new messages.
-		folder.biffState = nsIMsgFolder.nsMsgBiffState_NoMail;
-		folder.clearNewMessages();
-		server.getNewMessages(folder, msgWindow, null);
+		GetNewMsgs_orig(server, folder);
 	}
 
 	// override original function
@@ -597,6 +589,19 @@ function mexint_onLoad (event)
 		}
 
 		SendUnsentMessages_orig();
+	}
+
+	// override original function
+	var SendMDNResponse_orig = SendMDNResponse;
+	SendMDNResponse = function ()
+	{
+		if ( gFolderDisplay.displayedFolder.server.getBoolValue("mexint") )
+		{
+			alert("SendMDNResponse is not implemented yet");
+			return;
+		}
+
+		SendMDNResponse_orig();
 	}
 
 	// handle opening folder event

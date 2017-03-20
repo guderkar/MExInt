@@ -187,7 +187,7 @@ function composeAndSendMessage (server, deliveryMode)
 			else if ( deliveryMode == nsIMsgCompDeliverMode.SaveAsDraft || deliveryMode == nsIMsgCompDeliverMode.AutoSaveAsDraft )
 			{
 				// TODO
-				alert("Not implemented yet");
+				// alert("SaveAsDraft is not implemented yet");
 				enableWindow();
 				return;
 			}
@@ -249,14 +249,24 @@ function composeAndSendMessage (server, deliveryMode)
 	let msgSend = Components.classes["@mozilla.org/messengercompose/send;1"]
                   .createInstance(Components.interfaces.nsIMsgSend);
 
-    msgSend.createRFC822Message(getCurrentIdentity(),
-                                gMsgCompose.compFields,
-                                gMsgCompose.editor.contentsMIMEType,
-                                encodeUTF8(msgBody),
-                                false,
-                                attachments,
-                                objects,
-                                gSendListener);
+    msgSend.createAndSendMessage(gMsgCompose.editor                  /* aEditor */,
+                                 getCurrentIdentity()                /* aUserIdentity */,
+                                 getCurrentAccountKey()              /* aAccountKey */,
+                                 gMsgCompose.compFields              /* aFields */,
+                                 false                               /* aIsDigest */,
+                                 true                                /* aDontDeliver */,
+                                 nsIMsgCompDeliverMode.Now           /* aMode */,
+                                 null                                /* aMsgToReplace */,
+                                 gMsgCompose.editor.contentsMIMEType /* aBodyType */,
+                                 encodeUTF8(msgBody)                 /* aBody */,
+                                 attachments                         /* aAttachments */,
+                                 null                                /* aPreloadedAttachments */,
+                                 null                                /* aParentWindow */,
+                                 null                                /* aProgress */,
+                                 gSendListener                       /* aListener */,
+                                 null                                /* aPassword */,
+                                 null                                /* aOriginalMsgURI */,
+                                 nsIMsgCompType.New                  /* aType */);
 }
 
 window.addEventListener("compose-send-message", function (event) {

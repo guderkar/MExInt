@@ -146,7 +146,7 @@ function addAccount ()
     var identity = accountManager.createIdentity();
     identity.fullName = name;
     identity.email = email;
-    // identity.smtpServerKey = server.key;
+    identity.smtpServerKey = server.key;
 
     Components.utils.import("resource://gre/modules/Services.jsm");
 	var msgProps = Services.strings.createBundle("chrome://messenger/locale/messenger.properties");
