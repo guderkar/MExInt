@@ -513,7 +513,7 @@ function mexint_onLoad (event)
 	      // START MY CODE
 	      if ( currentServer.getBoolValue("mexint") )
 	      {
-	      	var folder = currentServer.getFolderWithFlags(Components.interfaces.nsMsgFolderFlags.Inbox);
+	      	var folder = currentServer.rootFolder.getFolderWithFlags(Components.interfaces.nsMsgFolderFlags.Inbox);
 	        getMessages(currentServer, folder);
 	        continue;
 	      }
