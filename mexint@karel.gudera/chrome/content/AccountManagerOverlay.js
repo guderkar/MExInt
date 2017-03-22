@@ -36,6 +36,60 @@ function accountStillExists (account)
     return false;
 }
 
+function overrideAccountManager ()
+{
+	// override original function
+	gAccountTree._build_orig = gAccountTree._build;
+    gAccountTree._build = function ()
+    {
+		gAccountTree._build_orig();
+
+		var mainTreeChildren = document.getElementById("account-tree-children").childNodes;
+
+		for ( var i = 0; i < mainTreeChildren.length; i++ )
+		{
+		    var node = mainTreeChildren[i];
+
+		    try 
+		    {
+				if ( node._account && node._account.incomingServer.getBoolValue("mexint") )
+				{
+				    var treeChildrenNode = node.getElementsByTagName("treechildren")[0];
+				    var nodeChildren = treeChildrenNode.childNodes;
+				    var ewsServerNode = null;
+
+				    for ( var j = nodeChildren.length - 1; j >= 0; j-- )
+				    {
+						var row = nodeChildren[j];
+						var pageTag = row.getAttribute("PageTag");
+
+						if ( pageTag == "am-server.xul" )
+						{
+						    row.setAttribute("PageTag", "chrome://mexint/content/am-ewsServer.xul");
+						}
+
+						if ( pageTag == "am-offline.xul" ||
+						     pageTag == "am-junk.xul"    ||
+						     pageTag == "am-mdn.xul"     ||
+						     pageTag == "am-smime.xul"   ||
+						     pageTag == "am-copies.xul"/*||
+						     pageTag == "am-addressing.xul"*/ )
+						{
+						    treeChildrenNode.removeChild(row);
+						}
+				    }
+				}
+		    }
+		    catch (ex)
+		    {
+				Components.utils.reportError(ex);
+		    }
+		}
+    }
+
+    gAccountTree._build();
+}
+
 function mexint_onLoad (event)
 {
 	// override original function
@@ -52,6 +106,9 @@ function mexint_onLoad (event)
 		if ( isMexint && ! accountStillExists(account) )
 			removeLoginManagerInfo(username);
 	}
+
+	// override account manager
+	overrideAccountManager();
 }
 
 window.addEventListener("load", function (event) { mexint_onLoad(event); }, false);

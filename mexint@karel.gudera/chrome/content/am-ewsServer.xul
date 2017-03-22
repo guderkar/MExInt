@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?xml-stylesheet href="chrome://messenger/skin/accountManage.css" type="text/css"?>
+<?xml-stylesheet href="chrome://messenger/skin/messenger.css" type="text/css"?>
+<?xml-stylesheet href="chrome://messenger/skin/folderMenus.css" type="text/css"?>
+<?xml-stylesheet href="chrome://messenger/content/charsetList.css" type="text/css"?>
+
+<!DOCTYPE page [
+<!ENTITY % trashDTD SYSTEM "chrome://messenger/locale/am-server-top.dtd">
+%trashDTD;
+]>
+
+<page title="&serverSettings.label;"
+      xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+      onload="parent.onPanelLoaded('chrome://mexint/content/am-ewsServer.xul');">
+
+    <script type="application/javascript" src="chrome://mexint/content/am-ewsServer.js"/>
+
+    <dialogheader title="&serverSettings.label;"/>
+
+    <grid>
+      <columns>
+        <column/>
+        <column flex="1"/>
+        <column/>
+      </columns>
+      <rows>
+        <row align="center">
+          <label value="&serverType.label;"/>
+          <label value="Exchange Mail Server"/>
+        </row>
+      </rows>
+    </grid>
+
+    <separator class="groove"/>
+
+    <vbox flex="1">
+    <grid>
+      <columns>
+        <column/>
+        <column flex="1"/>
+      </columns>
+      <rows>
+        <row>
+          <label id="URLLabel"
+                 value="EWS URL:"
+                 control="URL"/>
+          <textbox id="URL"
+                   flex="6"/>
+        </row>
+        <row>
+          <label id="usernameLabel"
+                 value="Username / E-mail:"
+                 control="username"/>
+          <textbox id="username"
+                   flex="6"/>
+        </row>
+        <row>
+          <label id="passwordLabel"
+                 value="Password:"/>
+          <button id="changePasswordButton"
+                  label="Change Password"
+                  oncommand="changePassword();"
+                  flex="6"/>
+        </row>
+        <row>
+          <label id="authenticationLabel"
+                 value="Authentication method:"/>
+          <menulist id="authType"
+                    flex="6">
+            <menupopup>
+              <menuitem label="Basic"
+                        value="Basic"/>
+              <menuitem label="NTLM"
+                        value="NTLM"/>
+            </menupopup>
+          </menulist>
+        </row>
+        <row>
+          <label id="TLSLabel"
+                 value="Server's certificate check:"/>
+          <checkbox id="TLS"
+                    flex="6"/>
+        </row>
+      </rows>
+    </grid>
+  </vbox>
+
+</page>

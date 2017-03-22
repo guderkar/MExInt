@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
 
 <window id="AddAccountWindow"
@@ -12,7 +12,7 @@
   <vbox flex="1">
     <grid>
       <columns>
-        <column />
+        <column/>
         <column flex="1"/>
       </columns>
       <rows>
@@ -74,7 +74,6 @@
                     checked="true"
                     flex="6"/>
         </row>
-        <separator class="groove-thin"/>
         <separator class="groove-thin"/>
         <vbox align="center">
           <button id="addAccountButton"

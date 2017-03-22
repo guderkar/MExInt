@@ -3,3 +3,4 @@ resource    mexint    modules/
 overlay chrome://messenger/content/messenger.xul                         chrome://mexint/content/messengerOverlay.xul
 overlay chrome://messenger/content/messengercompose/messengercompose.xul chrome://mexint/content/messengerComposeOverlay.xul
 overlay chrome://messenger/content/AccountManager.xul                    chrome://mexint/content/AccountManagerOverlay.xul
+overlay chrome://messenger/content/am-main.xul                           chrome://mexint/content/am-mainOverlay.xul
