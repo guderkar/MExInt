@@ -146,6 +146,7 @@ function addAccount ()
     var identity = accountManager.createIdentity();
     identity.fullName = name;
     identity.email = email;
+    identity.archiveEnabled = false;
     identity.smtpServerKey = server.key;
 
     Components.utils.import("resource://gre/modules/Services.jsm");

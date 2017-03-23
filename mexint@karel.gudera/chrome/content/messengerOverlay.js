@@ -184,7 +184,12 @@ function getHeaders (server, folder, URL, username, password, authType, TLS)
 	else if ( folder.getFlag(Components.interfaces.nsMsgFolderFlags.Queue) )
 		flag = "outbox";
 	else
+	{
 		flag = "xxx" // TODO: folder UniqueId in the future
+		server.setBoolValue("locked", false);
+		showNotification(folder.prettiestName + " - " + server.prettyName + ": This folder is not supported");
+		return;
+	}
 
 	let authData_base64 = base64.encode(URL      + '\n' +
 		                                username + '\n' + 
@@ -262,6 +267,9 @@ function getMessages (server, folder)
 function deleteMessages (server, folder)
 {
 	var msgDBHdrs = gFolderDisplay.selectedMessages;
+
+	if ( ! msgDBHdrs || msgDBHdrs.length <= 0 )
+		return;
 
 	if ( server.getBoolValue("locked") )
 		return;
@@ -549,17 +557,23 @@ function mexint_onLoad (event)
 	  }
 	}
 
-	// override original command
-	document.getElementById("cmd_delete").setAttribute("oncommand", 
-		'var folder = GetFirstSelectedMsgFolder();'        +
-		'var server = folder.server;'                      +
-		'if ( server.getBoolValue("mexint") )'             +
-		'{'                                                +
-		'	deleteMessages(server, folder);'               +
-		'	return;'                                       +
-		'}'                                                +
+	// override original function
+	var gFolderDisplay_doCommand_orig = gFolderDisplay.doCommand;
+	gFolderDisplay.doCommand = function (msgViewCommandType)
+	{
+		var folder = GetFirstSelectedMsgFolder();
+		var server = folder.server;
 
-		'goDoCommand("cmd_delete");');
+		if ( server.getBoolValue("mexint") &&
+			 (msgViewCommandType == nsMsgViewCommandType.deleteMsg || 
+			  msgViewCommandType == nsMsgViewCommandType.deleteNoTrash) )
+		{
+			deleteMessages(server, folder);
+			return;
+		}
+
+		gFolderDisplay_doCommand_orig(msgViewCommandType);
+	}
 
 	// override original function
 	var IsSendUnsentMsgsEnabled_orig = IsSendUnsentMsgsEnabled;
