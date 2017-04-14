@@ -3,9 +3,9 @@ const subprocess = require('sdk/system/child_process/subprocess');
 const base64 = require('sdk/base64');
 Components.utils.import('resource://gre/modules/FileUtils.jsm');
 
-var OS = Components.classes["@mozilla.org/xre/app-info;1"]
-         .getService(Components.interfaces.nsIXULRuntime).OS;
-var node = (OS == "WINNT") ? "node.exe" : "node";
+var platform = Components.classes["@mozilla.org/xre/app-info;1"]
+               .getService(Components.interfaces.nsIXULRuntime).OS;
+var node = (platform == "WINNT") ? "node.exe" : "node";
 var nodePath = FileUtils.getFile("ProfD", ["extensions", "mexint@karel.gudera", "components", node]);
 var getMsgPath = FileUtils.getFile("ProfD", ["extensions", "mexint@karel.gudera", "server", "get_messages.js"]);
 var getHdrPath = FileUtils.getFile("ProfD", ["extensions", "mexint@karel.gudera", "server", "get_headers.js"]);
