@@ -1,3 +1,6 @@
+if ( ! mexint )
+    var mexint = {};
+
 var gUsername;
 
 function onLoad ()

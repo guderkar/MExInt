@@ -1,3 +1,6 @@
+if ( ! mexint )
+    var mexint = {};
+
 var gServer;
 var gEwsUrl;
 var gUsername;

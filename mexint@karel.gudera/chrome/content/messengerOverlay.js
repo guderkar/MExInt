@@ -1,3 +1,6 @@
+if ( ! mexint )
+	var mexint = {};
+
 const { require } = Components.utils.import('resource://gre/modules/commonjs/toolkit/require.js', {});
 const subprocess = require('sdk/system/child_process/subprocess');
 const base64 = require('sdk/base64');
