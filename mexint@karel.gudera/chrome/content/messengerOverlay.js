@@ -561,7 +561,7 @@ function mexint_onLoad (event)
 	}
 
 	// override original function
-	var gFolderDisplay_doCommand_orig = gFolderDisplay.doCommand;
+	gFolderDisplay.doCommand_orig = gFolderDisplay.doCommand;
 	gFolderDisplay.doCommand = function (msgViewCommandType)
 	{
 		var folder = GetFirstSelectedMsgFolder();
@@ -575,7 +575,7 @@ function mexint_onLoad (event)
 			return;
 		}
 
-		gFolderDisplay_doCommand_orig(msgViewCommandType);
+		gFolderDisplay.doCommand_orig(msgViewCommandType);
 	}
 
 	// override original function
