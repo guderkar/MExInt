@@ -1,6 +1,3 @@
-if ( ! mexint )
-	var mexint = {};
-
 function removeLoginManagerInfo (username)
 {
 	var passwordManager = Components.classes["@mozilla.org/login-manager;1"]

@@ -1,9 +1,4 @@
-if ( ! mexint )
-	var mexint = {};
-
-const { require } = Components.utils.import('resource://gre/modules/commonjs/toolkit/require.js', {});
-const subprocess = require('sdk/system/child_process/subprocess');
-const base64 = require('sdk/base64');
+Components.utils.import('resource://mexint/subprocess.jsm');
 Components.utils.import('resource://gre/modules/FileUtils.jsm');
 
 var platform = Components.classes["@mozilla.org/xre/app-info;1"]
@@ -55,14 +50,13 @@ function fetchMessages (IDs, server, folder, URL, username, password, authType, 
 	for ( var i = 0; i < IDs.length; i++ )
 		(i == IDs.length - 1) ? IDsStr += IDs[i] : IDsStr += IDs[i] + '\n';
 
-	let authData_base64 = base64.encode(URL      + '\n' +
-		                                username + '\n' + 
-		                                password + '\n' +
-		                                authType + '\n' +
-		                                TLS,
-		                                "utf-8");
+	let authData_base64 = btoa(URL      + '\n' +
+		                       username + '\n' + 
+		                       password + '\n' +
+		                       authType + '\n' +
+		                       TLS);
 
-	let IDs_base64 = base64.encode(IDsStr, "utf-8");
+	let IDs_base64 = btoa(IDsStr);
 
 	var p = subprocess.call({
 		command: nodePath.path,
@@ -77,14 +71,22 @@ function fetchMessages (IDs, server, folder, URL, username, password, authType, 
 		},
 
 		stdout: function (data) {
-			var lfIndex = data.indexOf('\n');
+			var dataArray = data.split('\n');
 
-			if ( lfIndex > -1 )
+			if ( dataArray.length > 1 )
 			{
 				showNotification(folder.prettiestName + " - " + server.prettyName + ": Downloading message " + (++msgCnt) + " of " + IDs.length + "...");
-				var message = stdout + data.slice(0, lfIndex);
-				stdout = data.slice(lfIndex + 1);
+				var message = stdout + dataArray[0];
 				saveMessage(message, server, folder);
+
+				for ( var i = 1; i < dataArray.length - 1; i++ )
+				{
+					showNotification(folder.prettiestName + " - " + server.prettyName + ": Downloading message " + (++msgCnt) + " of " + IDs.length + "...");
+					var message = dataArray[i];
+					saveMessage(message, server, folder);
+				}
+
+				stdout = dataArray[dataArray.length - 1];
 			}
 			else
 			{
@@ -194,12 +196,11 @@ function getHeaders (server, folder, URL, username, password, authType, TLS)
 		return;
 	}
 
-	let authData_base64 = base64.encode(URL      + '\n' +
-		                                username + '\n' + 
-		                                password + '\n' +
-		                                authType + '\n' +
-		                                TLS,
-		                                "utf-8");
+	let authData_base64 = btoa(URL      + '\n' +
+		                       username + '\n' + 
+		                       password + '\n' +
+		                       authType + '\n' +
+		                       TLS);
 
 	var p = subprocess.call({
 		command: nodePath.path,
@@ -313,14 +314,13 @@ function deleteMessages (server, folder)
 	for ( var i = 0; i < msgDBHdrs.length; i++ )
 		(i == msgDBHdrs.length - 1) ? IDsStr += msgDBHdrs[i].messageId : IDsStr += msgDBHdrs[i].messageId + '\n';
 
-	let authData_base64 = base64.encode(URL      + '\n' +
-		                                username + '\n' + 
-		                                password + '\n' +
-		                                authType + '\n' +
-		                                TLS,
-		                                "utf-8");
+	let authData_base64 = btoa(URL      + '\n' +
+		                       username + '\n' + 
+		                       password + '\n' +
+		                       authType + '\n' +
+		                       TLS);
 
-	let IDs_base64 = base64.encode(IDsStr, "utf-8");
+	let IDs_base64 = btoa(IDsStr);
 
 	var p = subprocess.call({
 		command: nodePath.path,
@@ -426,16 +426,15 @@ function sendUnsendMsgs (server, folder)
 			messages += localMessages[i].getProperty("bcc") + '\n' + localMessages[i].getProperty("mime_base64") + '\n';
 	}
 	
-	let authData_base64 = base64.encode(URL      + '\n' +
-                                        username + '\n' + 
-                                        password + '\n' +
-                                        authType + '\n' +
-                                        TLS,
-                                        "utf-8");
+	let authData_base64 = btoa(URL      + '\n' +
+                               username + '\n' + 
+                               password + '\n' +
+                               authType + '\n' +
+                               TLS);
 
-	let IDs_base64 = base64.encode(IDsStr, "utf-8");
+	let IDs_base64 = btoa(IDsStr);
 
-	let messages_base64 = base64.encode(messages, "utf-8");
+	let messages_base64 = btoa(messages);
 
 	var p = subprocess.call({
 		command: nodePath.path,

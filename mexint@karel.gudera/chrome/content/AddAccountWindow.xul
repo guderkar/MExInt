@@ -33,7 +33,7 @@
                  value="Username / E-mail:"
                  control="username"/>
           <textbox id="username"
-                   placeholder="Username / email@domain.com"
+                   placeholder="username / domain\username / email@domain.com"
                    flex="6"/>
         </row>
         <row>

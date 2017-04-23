@@ -1,9 +1,4 @@
-if ( ! mexint )
-	var mexint = {};
-
-const { require } = Components.utils.import('resource://gre/modules/commonjs/toolkit/require.js', {});
-const subprocess = require('sdk/system/child_process/subprocess');
-const base64 = require('sdk/base64');
+Components.utils.import('resource://mexint/subprocess.jsm');
 Components.utils.import('resource://gre/modules/FileUtils.jsm');
 
 var platform = Components.classes["@mozilla.org/xre/app-info;1"]
@@ -199,12 +194,11 @@ function composeAndSendMessage (server, deliveryMode)
 			var stdout;
 			var stderr;
 
-			let authData_base64 = base64.encode(URL      + '\n' +
-		                                        username + '\n' + 
-		                                        password + '\n' +
-		                                        authType + '\n' +
-		                                        TLS,
-		                                        "utf-8");
+			let authData_base64 = btoa(URL      + '\n' +
+		                               username + '\n' + 
+		                               password + '\n' +
+		                               authType + '\n' +
+		                               TLS);
 
 			var p = subprocess.call({
 				command: nodePath.path,

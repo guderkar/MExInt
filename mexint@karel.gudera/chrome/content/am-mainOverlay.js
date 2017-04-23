@@ -1,6 +1,3 @@
-if ( ! mexint )
-	var mexint = {};
-
 function hideUnnecessary (account)
 {
 	var server = account.incomingServer;

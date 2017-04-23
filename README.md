@@ -10,6 +10,9 @@ Account Settings -> Account Actions -> Add Microsoft Exchange Account
 2. Sending e-mail messages - works in standard way
 3. Deleting messages - works in standard way
 
+## Supported Thunderbird versions
+* 30.0 - 52.*
+
 ## Supported Exchange versions
 * Office 365
 * Exchange on-premises (2007 - 2016)
@@ -17,6 +20,12 @@ Account Settings -> Account Actions -> Add Microsoft Exchange Account
 ## Supported Authentication
 * Basic
 * NTLM
+
+## Possible username / e-mail formats
+* username
+* email
+* domain\username
+* domain\email
 
 ## Server Communication
 For cummunication with Exchange server bundled Node.js binary + [ews-javascript-api](https://github.com/gautamsi/ews-javascript-api) is used. Thanks gautamsi for providing such a great API and helping out using it.
